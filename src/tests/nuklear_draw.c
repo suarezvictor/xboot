@@ -11,6 +11,7 @@
 
 int machine_logger(const char * fmt, ...);
 #define printf machine_logger
+//#define printf(...)
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -469,6 +470,17 @@ static struct cg_ctx_t * cgctx = NULL;
 struct surface_t;
 extern struct surface_t *current_surface;
 
+static void do_stretch_blit(int x, int y, int w, int h, const struct surface_t *img)
+{
+	struct matrix_t m;
+	matrix_init_identity(&m);
+	matrix_translate(&m, x, y);
+	matrix_scale(&m, (double)w/img->width, (double)h/img->height);
+	//struct region_t r;
+	//region_init(&r, x, y, w, h); //clip not needed since scaled
+	surface_blit(current_surface, /*&r*/NULL, &m, img);
+}
+
 static void do_text(int x, int y, const char *utf8, unsigned count);
 
 static void commands_render()
@@ -720,7 +732,8 @@ struct nk_command_text {
         case NK_COMMAND_IMAGE: {
             const struct nk_command_image *i = (const struct nk_command_image *)cmd;
         	cmdname = "NK_COMMAND_IMAGE";
-			printf("nk_command_image x %d, y %d, w %d, h %d, handle %d (ptr 0x%p)\r\n", i->x, i->y, i->w, i->h, i->img.handle.id, i->img.handle.ptr);
+        	struct surface_t *imgsurface = (struct surface_t *) i->img.handle.ptr;
+			printf("nk_command_image x %d, y %d, w %d, h %d, img ptr 0x%p, imgw %d, imgh %d\r\n", i->x, i->y, i->w, i->h, imgsurface, imgsurface ? imgsurface->width : -1, imgsurface ? imgsurface->height : -1);
         	/*
 struct nk_command_image {
     struct nk_command header;
@@ -731,12 +744,8 @@ struct nk_command_image {
 };
 struct nk_image {nk_handle handle; nk_ushort w, h; nk_ushort region[4];};
         	*/
-        	struct surface_t *imgsurface = (struct surface_t *) i->img.handle.ptr;
         	if(imgsurface)
-        	{
-	        	cg_set_source_surface(cgctx, (struct cg_surface_t *)imgsurface->priv, i->x, i->y);
-				cg_paint(cgctx);
-			}
+        		do_stretch_blit(i->x, i->y, i->w, i->h, imgsurface);
         } break;
         case NK_COMMAND_RECT_MULTI_COLOR:
         	cmdname = "NK_COMMAND_RECT_MULTI_COLOR";
@@ -760,34 +769,32 @@ float my_nk_text_width_f(nk_handle user, float h, const char*s, int len)
                                     nk_rune codepoint, nk_rune next_codepoint);
 */
 #include <xfs/xfs.h>
+static struct xfs_context_t xfs_assets;
+static void init_assets_dir(const char *path)
+{
+	init_list_head(&xfs_assets.mounts.list);
+	spin_lock_init(&xfs_assets.lock);
+	xfs_mount(&xfs_assets, path, 0);
+}
 
-static struct nk_image
-image_load(const char *filename)
+
+static struct nk_image image_load(const char *filename)
 {
 	struct surface_t * img = NULL;
-	//cg_surface_create_for_data(w, h, (void *)cat_img_128_128);
-
 	{
-		struct xfs_context_t * xfs;
-		xfs = xfs_alloc("/private/framework", 0);
-		if(xfs)
-		{
-			img = surface_alloc_from_xfs(xfs, filename);
-			/*
+		/*
 struct surface_t
 {
-	int width;
-	int height;
-	int stride;
-	int pixlen;
-	void * pixels;
-	struct render_t * r;
-	void * rctx;
-	void * priv;
+int width;
+int height;
+int stride;
+int pixlen;
+void * pixels;
+struct render_t * r;
+void * rctx;
+void * priv;
 };			*/
-			img->priv = cg_surface_create_for_data(img->width, img->height, img->pixels);
-			xfs_free(xfs);
-		}
+		img = surface_alloc_from_xfs(&xfs_assets, filename);
 	}
 	printf("loaded image %s at 0x%p\r\n", filename, img);
 	return nk_image_ptr(img);
@@ -795,13 +802,12 @@ struct surface_t
 
 void nuklear_demo(void)
 {
-	printf("render_test2\r\n");
+	printf("render_test2, renderer %s\r\n", current_surface->r->name);
 	static int init = 0;
 	if(!init)
 	{
 		init = 1;
 
-		const void *image; int w, h;
 		struct nk_font_config cfg = nk_font_config(0);
 		cfg.oversample_h = 3; cfg.oversample_v = 2;
 		/* Loading one font with different heights is only required if you want higher
@@ -828,30 +834,29 @@ void nuklear_demo(void)
         media.font_22->handle.width = my_nk_text_width_f;
         
 		nk_init_default(&nkctx, &media.font_14->handle);
-
-		const char *image_name = "assets/images/icon.png";
-		media.unchecked = image_load(/*"../icon/unchecked.png"*/image_name);
-		media.checked = image_load(/*"../icon/checked.png"*/image_name);
-		media.rocket = image_load(/*"../icon/rocket.png"*/image_name);
-		media.cloud = image_load(/*"../icon/cloud.png"*/image_name);
-		media.pen = image_load(/*"../icon/pen.png"*/image_name);
-		media.play = image_load(/*"../icon/play.png"*/image_name);
-		media.pause = image_load(/*"../icon/pause.png"*/image_name);
-		media.stop = image_load(/*"../icon/stop.png"*/image_name);
-		media.next =  image_load(/*"../icon/next.png")*/image_name);
-		media.prev =  image_load(/*"../icon/prev.png"*/image_name);
-		media.tools = image_load(/*"../icon/tools.png"*/image_name);
-		media.dir = image_load(/*"../icon/directory.png"*/image_name);
-		media.copy = image_load(/*"../icon/copy.png"*/image_name);
-		media.convert = image_load(/*"../icon/export.png"*/image_name);
-		media.del = image_load(/*"../icon/delete.png"*/image_name);
-		media.edit = image_load(/*"../icon/edit.png"*/image_name);
-		media.menu[0] = image_load(/*"../icon/home.png"*/image_name);
-		media.menu[1] = image_load(/*"../icon/phone.png"*/image_name);
-		media.menu[2] = image_load(/*"../icon/plane.png"*/image_name);
-		media.menu[3] = image_load(/*"../icon/wifi.png"*/image_name);
-		media.menu[4] = image_load(/*"../icon/settings.png"*/image_name);
-		media.menu[5] = image_load(/*"../icon/volume.png"*/image_name);
+		init_assets_dir("/application");
+		media.unchecked = image_load("nuklear/icon/unchecked.png");
+		media.checked = image_load("nuklear/icon/checked.png");
+		media.rocket = image_load("nuklear/icon/rocket.png");
+		media.cloud = image_load("nuklear/icon/cloud.png");
+		media.pen = image_load("nuklear/icon/pen.png");
+		media.play = image_load("nuklear/icon/play.png");
+		media.pause = image_load("nuklear/icon/pause.png");
+		media.stop = image_load("nuklear/icon/stop.png");
+		media.next =  image_load("nuklear/icon/next.png");
+		media.prev =  image_load("nuklear/icon/prev.png");
+		media.tools = image_load("nuklear/icon/tools.png");
+		media.dir = image_load("nuklear/icon/directory.png");
+		media.copy = image_load("nuklear/icon/copy.png");
+		media.convert = image_load("nuklear/icon/export.png");
+		media.del = image_load("nuklear/icon/delete.png");
+		media.edit = image_load("nuklear/icon/edit.png");
+		media.menu[0] = image_load("nuklear/icon/home.png");
+		media.menu[1] = image_load("nuklear/icon/phone.png");
+		media.menu[2] = image_load("nuklear/icon/plane.png");
+		media.menu[3] = image_load("nuklear/icon/wifi.png");
+		media.menu[4] = image_load("nuklear/icon/settings.png");
+		media.menu[5] = image_load("nuklear/icon/volume.png");
 	}
 	
 	grid_demo(&nkctx, &media);
