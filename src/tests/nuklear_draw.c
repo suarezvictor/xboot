@@ -21,8 +21,6 @@ int machine_logger(const char * fmt, ...);
 #define NK_IMPLEMENTATION
 #include "nuklear.h"
 
-//#define STB_IMAGE_IMPLEMENTATION
-//#include "stb_image.h"
 
 /* macros */
 #define WINDOW_WIDTH 1200
@@ -60,6 +58,110 @@ struct media {
     struct nk_image images[9];
     struct nk_image menu[6];
 };
+
+/* ===============================================================
+ *
+ *                          CUSTOM WIDGET
+ *
+ * ===============================================================*/
+static int
+ui_piemenu(struct nk_context *ctx, struct nk_vec2 pos, float radius,
+            struct nk_image *icons, int item_count)
+{
+    int ret = -1;
+    struct nk_rect total_space;
+    struct nk_rect bounds;
+    int active_item = 0;
+
+    /* pie menu popup */
+    struct nk_color border = ctx->style.window.border_color;
+    struct nk_style_item background = ctx->style.window.fixed_background;
+    ctx->style.window.fixed_background = nk_style_item_hide();
+    ctx->style.window.border_color = nk_rgba(0,0,0,0);
+
+    total_space  = nk_window_get_content_region(ctx);
+    ctx->style.window.spacing = nk_vec2(0,0);
+    ctx->style.window.padding = nk_vec2(0,0);
+
+    if (nk_popup_begin(ctx, NK_POPUP_STATIC, "piemenu", NK_WINDOW_NO_SCROLLBAR,
+        nk_rect(pos.x - total_space.x - radius, pos.y - radius - total_space.y,
+        2*radius,2*radius)))
+    {
+        int i = 0;
+        struct nk_command_buffer* out = nk_window_get_canvas(ctx);
+        const struct nk_input *in = &ctx->input;
+
+        total_space = nk_window_get_content_region(ctx);
+        ctx->style.window.spacing = nk_vec2(4,4);
+        ctx->style.window.padding = nk_vec2(8,8);
+        nk_layout_row_dynamic(ctx, total_space.h, 1);
+        nk_widget(&bounds, ctx);
+
+        /* outer circle */
+        nk_fill_circle(out, bounds, nk_rgb(50,50,50));
+        {
+            /* circle buttons */
+            float step = (2 * 3.141592654f) / (float)(MAX(1,item_count));
+            float a_min = 0; float a_max = step;
+
+            struct nk_vec2 center = nk_vec2(bounds.x + bounds.w / 2.0f, bounds.y + bounds.h / 2.0f);
+            struct nk_vec2 drag = nk_vec2(in->mouse.pos.x - center.x, in->mouse.pos.y - center.y);
+            float angle = (float)atan2(drag.y, drag.x);
+            if (angle < -0.0f) angle += 2.0f * 3.141592654f;
+            active_item = (int)(angle/step);
+
+            for (i = 0; i < item_count; ++i) {
+                struct nk_rect content;
+                float rx, ry, dx, dy, a;
+                nk_fill_arc(out, center.x, center.y, (bounds.w/2.0f),
+                    a_min, a_max, (active_item == i) ? nk_rgb(45,100,255): nk_rgb(60,60,60));
+
+                /* separator line */
+                rx = bounds.w/2.0f; ry = 0;
+                dx = rx * (float)cos(a_min) - ry * (float)sin(a_min);
+                dy = rx * (float)sin(a_min) + ry * (float)cos(a_min);
+                nk_stroke_line(out, center.x, center.y,
+                    center.x + dx, center.y + dy, 1.0f, nk_rgb(50,50,50));
+
+                /* button content */
+                a = a_min + (a_max - a_min)/2.0f;
+                rx = bounds.w/2.5f; ry = 0;
+                content.w = 30; content.h = 30;
+                content.x = center.x + ((rx * (float)cos(a) - ry * (float)sin(a)) - content.w/2.0f);
+                content.y = center.y + (rx * (float)sin(a) + ry * (float)cos(a) - content.h/2.0f);
+                nk_draw_image(out, content, &icons[i], nk_rgb(255,255,255));
+                a_min = a_max; a_max += step;
+            }
+        }
+        {
+            /* inner circle */
+            struct nk_rect inner;
+            inner.x = bounds.x + bounds.w/2 - bounds.w/4;
+            inner.y = bounds.y + bounds.h/2 - bounds.h/4;
+            inner.w = bounds.w/2; inner.h = bounds.h/2;
+            nk_fill_circle(out, inner, nk_rgb(45,45,45));
+
+            /* active icon content */
+            bounds.w = inner.w / 2.0f;
+            bounds.h = inner.h / 2.0f;
+            bounds.x = inner.x + inner.w/2 - bounds.w/2;
+            bounds.y = inner.y + inner.h/2 - bounds.h/2;
+            nk_draw_image(out, bounds, &icons[active_item], nk_rgb(255,255,255));
+        }
+        nk_layout_space_end(ctx);
+        if (!nk_input_is_mouse_down(&ctx->input, NK_BUTTON_RIGHT)) {
+            nk_popup_close(ctx);
+            ret = active_item;
+        }
+    } else ret = -2;
+    ctx->style.window.spacing = nk_vec2(4,4);
+    ctx->style.window.padding = nk_vec2(8,8);
+    nk_popup_end(ctx);
+
+    ctx->style.window.fixed_background = background;
+    ctx->style.window.border_color = border;
+    return ret;
+}
 
 /* ===============================================================
  *
@@ -240,15 +342,139 @@ button_demo(struct nk_context *ctx, struct media *media)
     nk_end(ctx);
 }
 
+/* ===============================================================
+ *
+ *                          BASIC DEMO
+ *
+ * ===============================================================*/
+static void
+basic_demo(struct nk_context *ctx, struct media *media)
+{
+    static int image_active;
+    static int check0 = 1;
+    static int check1 = 0;
+    static size_t prog = 80;
+    static int selected_item = 0;
+    static int selected_image = 3;
+    static int selected_icon = 0;
+    static const char *items[] = {"Item 0","item 1","item 2"};
+    static int piemenu_active = 0;
+    static struct nk_vec2 piemenu_pos;
+
+    int i = 0;
+    nk_style_set_font(ctx, &media->font_20->handle);
+    nk_begin(ctx, "Basic Demo", nk_rect(320, 50, 275, 610),
+        NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_TITLE);
+
+    /*------------------------------------------------
+     *                  POPUP BUTTON
+     *------------------------------------------------*/
+    ui_header(ctx, media, "Popup & Scrollbar & Images");
+    ui_widget(ctx, media, 35);
+    if (nk_button_image_label(ctx, media->dir, "Images", NK_TEXT_CENTERED))
+        image_active = !image_active;
+
+    /*------------------------------------------------
+     *                  SELECTED IMAGE
+     *------------------------------------------------*/
+    ui_header(ctx, media, "Selected Image");
+    ui_widget_centered(ctx, media, 100);
+    nk_image(ctx, media->images[selected_image]);
+
+    /*------------------------------------------------
+     *                  IMAGE POPUP
+     *------------------------------------------------*/
+    if (image_active) {
+        struct nk_panel popup;
+        if (nk_popup_begin(ctx, NK_POPUP_STATIC, "Image Popup", 0, nk_rect(265, 0, 320, 220))) {
+            nk_layout_row_static(ctx, 82, 82, 3);
+            for (i = 0; i < 9; ++i) {
+                if (nk_button_image(ctx, media->images[i])) {
+                    selected_image = i;
+                    image_active = 0;
+                    nk_popup_close(ctx);
+                }
+            }
+            nk_popup_end(ctx);
+        }
+    }
+    /*------------------------------------------------
+     *                  COMBOBOX
+     *------------------------------------------------*/
+    ui_header(ctx, media, "Combo box");
+    ui_widget(ctx, media, 40);
+    if (nk_combo_begin_label(ctx, items[selected_item], nk_vec2(nk_widget_width(ctx), 200))) {
+        nk_layout_row_dynamic(ctx, 35, 1);
+        for (i = 0; i < 3; ++i)
+            if (nk_combo_item_label(ctx, items[i], NK_TEXT_LEFT))
+                selected_item = i;
+        nk_combo_end(ctx);
+    }
+
+    ui_widget(ctx, media, 40);
+    if (nk_combo_begin_image_label(ctx, items[selected_icon], media->images[selected_icon], nk_vec2(nk_widget_width(ctx), 200))) {
+        nk_layout_row_dynamic(ctx, 35, 1);
+        for (i = 0; i < 3; ++i)
+            if (nk_combo_item_image_label(ctx, media->images[i], items[i], NK_TEXT_RIGHT))
+                selected_icon = i;
+        nk_combo_end(ctx);
+    }
+
+    /*------------------------------------------------
+     *                  CHECKBOX
+     *------------------------------------------------*/
+    ui_header(ctx, media, "Checkbox");
+    ui_widget(ctx, media, 30);
+    nk_checkbox_label(ctx, "Flag 1", &check0);
+    ui_widget(ctx, media, 30);
+    nk_checkbox_label(ctx, "Flag 2", &check1);
+
+    /*------------------------------------------------
+     *                  PROGRESSBAR
+     *------------------------------------------------*/
+    ui_header(ctx, media, "Progressbar");
+    ui_widget(ctx, media, 35);
+    nk_progress(ctx, &prog, 100, nk_true);
+
+    /*------------------------------------------------
+     *                  PIEMENU
+     *------------------------------------------------*/
+    if (nk_input_is_mouse_click_down_in_rect(&ctx->input, NK_BUTTON_RIGHT,
+        nk_window_get_bounds(ctx),nk_true)){
+        piemenu_pos = ctx->input.mouse.pos;
+        piemenu_active = 1;
+    }
+
+    if (piemenu_active) {
+        int ret = ui_piemenu(ctx, piemenu_pos, 140, &media->menu[0], 6);
+        if (ret == -2) piemenu_active = 0;
+        if (ret != -1) {
+            fprintf(stdout, "piemenu selected: %d\n", ret);
+            piemenu_active = 0;
+        }
+    }
+    nk_style_set_font(ctx, &media->font_14->handle);
+    nk_end(ctx);
+}
 
 struct nk_font_atlas atlas;
-static struct nk_context ctx;
+static struct nk_context nkctx;
 static struct media media;
+
+#include <graphic/surface.h>
+#include <cg.h>
+#include "cat.h" //cat sample image data
+	
+static struct cg_ctx_t * cgctx = NULL;
+struct surface_t;
+extern struct surface_t *current_surface;
+
+static void do_text(int x, int y, const char *utf8, unsigned count);
 
 static void commands_render()
 {
     const struct nk_command *cmd;
-    nk_foreach(cmd, &ctx)
+    nk_foreach(cmd, &nkctx)
     {
     	const char *cmdname = "";
         switch (cmd->type) {
@@ -270,20 +496,59 @@ static void commands_render()
         case NK_COMMAND_RECT: {
             const struct nk_command_rect *r = (const struct nk_command_rect *)cmd;
         	cmdname = "NK_COMMAND_RECT";
-            //color = nk_color_to_allegro_color(r->color);
-            //al_draw_rounded_rectangle((float)r->x, (float)r->y, (float)(r->x + r->w),
-            //    (float)(r->y + r->h), (float)r->rounding, (float)r->rounding, color,
-            //    (float)r->line_thickness);
+        	/*
+struct nk_command_rect {
+    struct nk_command header;
+    unsigned short rounding;
+    unsigned short line_thickness;
+    short x, y;
+    unsigned short w, h;
+    struct nk_color color;
+};
+        	*/
+			printf("nk_command_rect x %d, y %d, w %d, h %d\r\n", r->x, r->y, r->w, r->h);
+			cg_set_source_rgba(cgctx, r->color.r/255., r->color.g/255., r->color.b/255., r->color.a/255.);
+			cg_set_line_width(cgctx, r->line_thickness);
+			cg_move_to(cgctx, r->x, r->y);
+			cg_rel_line_to(cgctx, r->w, 0);
+			cg_rel_line_to(cgctx, 0, r->h);
+			cg_rel_line_to(cgctx, -r->w, 0);
+			cg_close_path(cgctx);
+			cg_stroke(cgctx);
+            
         } break;
         case NK_COMMAND_RECT_FILLED: {
+        	/*
+struct nk_command_rect_filled {
+    struct nk_command header;
+    unsigned short rounding;
+    short x, y;
+    unsigned short w, h;
+    struct nk_color color;
+};
+        	*/
             const struct nk_command_rect_filled *r = (const struct nk_command_rect_filled *)cmd;
         	cmdname = "NK_COMMAND_RECT_FILLED";
-            //color = nk_color_to_allegro_color(r->color);
-            //al_draw_filled_rounded_rectangle((float)r->x, (float)r->y,
-            //    (float)(r->x + r->w), (float)(r->y + r->h), (float)r->rounding,
-            //    (float)r->rounding, color);
+			printf("nk_command_rect_filled x %d, y %d, w %d, h %d\r\n", r->x, r->y, r->w, r->h);
+			cg_set_source_rgba(cgctx, r->color.r/255., r->color.g/255., r->color.b/255., r->color.a/255.);
+			cg_move_to(cgctx, r->x, r->y);
+			cg_rel_line_to(cgctx, r->w, 0);
+			cg_rel_line_to(cgctx, 0, r->h);
+			cg_rel_line_to(cgctx, -r->w, 0);
+			cg_close_path(cgctx);
+			cg_fill(cgctx);
         } break;
         case NK_COMMAND_CIRCLE: {
+        /*
+
+struct nk_command_circle {
+    struct nk_command header;
+    short x, y;
+    unsigned short line_thickness;
+    unsigned short w, h;
+    struct nk_color color;
+};
+        */
             float xr, yr;
             const struct nk_command_circle *c = (const struct nk_command_circle *)cmd;
         	cmdname = "NK_COMMAND_CIRCLE";
@@ -294,18 +559,43 @@ static void commands_render()
             //    xr, yr, color, (float)c->line_thickness);
         } break;
         case NK_COMMAND_CIRCLE_FILLED: {
+        /*
+struct nk_command_circle_filled {
+    struct nk_command header;
+    short x, y;
+    unsigned short w, h;
+    struct nk_color color;
+};
+        */
             float xr, yr;
             const struct nk_command_circle_filled *c = (const struct nk_command_circle_filled *)cmd;
         	cmdname = "NK_COMMAND_CIRCLE_FILLED";
-            //color = nk_color_to_allegro_color(c->color);
+			printf("nk_command_circle_filled x %d, y %d, w %d, h %d\r\n", c->x, c->y, c->w, c->h);
+			cg_set_source_rgba(cgctx, c->color.r/255., c->color.g/255., c->color.b/255., c->color.a/255.);
             xr = (float)c->w/2;
             yr = (float)c->h/2;
             //al_draw_filled_ellipse(((float)(c->x)) + xr, ((float)c->y) + yr,
             //    xr, yr, color);
+			cg_set_line_width(cgctx, 1);
+			cg_ellipse(cgctx, c->x + xr, c->y + yr, xr, yr);
+			cg_fill(cgctx);
+
+            
         } break;
         case NK_COMMAND_TRIANGLE: {
             const struct nk_command_triangle*t = (const struct nk_command_triangle*)cmd;
         	cmdname = "NK_COMMAND_TRIANGLE";
+        	/*
+
+struct nk_command_triangle {
+    struct nk_command header;
+    unsigned short line_thickness;
+    struct nk_vec2i a;
+    struct nk_vec2i b;
+    struct nk_vec2i c;
+    struct nk_color color;
+};
+        	*/
             //color = nk_color_to_allegro_color(t->color);
             //al_draw_triangle((float)t->a.x, (float)t->a.y, (float)t->b.x, (float)t->b.y,
             //    (float)t->c.x, (float)t->c.y, color, (float)t->line_thickness);
@@ -313,9 +603,23 @@ static void commands_render()
         case NK_COMMAND_TRIANGLE_FILLED: {
             const struct nk_command_triangle_filled *t = (const struct nk_command_triangle_filled *)cmd;
         	cmdname = "NK_COMMAND_TRIANGLE_FILLED";
-            //color = nk_color_to_allegro_color(t->color);
-            //al_draw_filled_triangle((float)t->a.x, (float)t->a.y, (float)t->b.x,
-            //    (float)t->b.y, (float)t->c.x, (float)t->c.y, color);
+        	/*
+
+struct nk_command_triangle_filled {
+    struct nk_command header;
+    struct nk_vec2i a;
+    struct nk_vec2i b;
+    struct nk_vec2i c;
+    struct nk_color color;
+};
+        	*/
+			printf("nk_command_triangle_filled x0 %d, y0 %d, x1 %d, y1 %d, x2 %d, y2 %d\r\n", t->a.x, t->a.y, t->b.x, t->b.y, t->c.x, t->c.y);
+			cg_set_source_rgba(cgctx, t->color.r/255., t->color.g/255., t->color.b/255., t->color.a/255.);
+			cg_move_to(cgctx, t->a.x, t->a.y);
+			cg_line_to(cgctx, t->b.x, t->b.y);
+			cg_line_to(cgctx, t->c.x, t->c.y);
+			cg_close_path(cgctx);
+			cg_fill(cgctx);
         } break;
         case NK_COMMAND_POLYGON: {
             int i;
@@ -364,14 +668,25 @@ static void commands_render()
             free(vertices);
         } break;
         case NK_COMMAND_TEXT: {
+        /*
+
+struct nk_command_text {
+    struct nk_command header;
+    const struct nk_user_font *font;
+    struct nk_color background;
+    struct nk_color foreground;
+    short x, y;
+    unsigned short w, h;
+    float height;
+    int length;
+    char string[1];
+};
+        */
             const struct nk_command_text *t = (const struct nk_command_text*)cmd;
         	cmdname = "NK_COMMAND_TEXT";
-            //NkAllegro5Font *font;
-            //color = nk_color_to_allegro_color(t->foreground);
-            //font = (NkAllegro5Font*)t->font->userdata.ptr;
-            //al_draw_text(font->font,
-            //    color, (float)t->x, (float)t->y, 0,
-            //    (const char*)t->string);
+			printf("nk_command_text x %d, y %d, w %d, h %d, text: '%.*s'\r\n", t->x, t->y, t->w, t->h, t->length, t->string);
+			cg_set_source_rgba(cgctx, t->foreground.r/255., t->foreground.g/255., t->foreground.b/255., t->foreground.a/255.);
+        	do_text(t->x, t->y, t->string, t->length);
         } break;
         case NK_COMMAND_CURVE: {
             float points[8];
@@ -405,7 +720,23 @@ static void commands_render()
         case NK_COMMAND_IMAGE: {
             const struct nk_command_image *i = (const struct nk_command_image *)cmd;
         	cmdname = "NK_COMMAND_IMAGE";
-            //al_draw_bitmap_region(i->img.handle.ptr, 0, 0, i->w, i->h, i->x, i->y, 0);
+			printf("nk_command_image x %d, y %d, w %d, h %d, handle %d (ptr 0x%p)\r\n", i->x, i->y, i->w, i->h, i->img.handle.id, i->img.handle.ptr);
+        	/*
+struct nk_command_image {
+    struct nk_command header;
+    short x, y;
+    unsigned short w, h;
+    struct nk_image img;
+    struct nk_color col;
+};
+struct nk_image {nk_handle handle; nk_ushort w, h; nk_ushort region[4];};
+        	*/
+        	struct surface_t *imgsurface = (struct surface_t *) i->img.handle.ptr;
+        	if(imgsurface)
+        	{
+	        	cg_set_source_surface(cgctx, (struct cg_surface_t *)imgsurface->priv, i->x, i->y);
+				cg_paint(cgctx);
+			}
         } break;
         case NK_COMMAND_RECT_MULTI_COLOR:
         	cmdname = "NK_COMMAND_RECT_MULTI_COLOR";
@@ -416,7 +747,7 @@ static void commands_render()
         }
     	printf("Nuklear draw command %d, %s\r\n", cmd->type, cmdname);
     }
-    nk_clear(&ctx);
+    nk_clear(&nkctx);
 }
 
 float my_nk_text_width_f(nk_handle user, float h, const char*s, int len)
@@ -424,9 +755,43 @@ float my_nk_text_width_f(nk_handle user, float h, const char*s, int len)
   return 10;
 }
 
-typedef void(*nk_query_font_glyph_f)(nk_handle handle, float font_height,
+/*typedef void(*nk_query_font_glyph_f)(nk_handle handle, float font_height,
                                     struct nk_user_font_glyph *glyph,
                                     nk_rune codepoint, nk_rune next_codepoint);
+*/
+#include <xfs/xfs.h>
+
+static struct nk_image
+image_load(const char *filename)
+{
+	struct surface_t * img = NULL;
+	//cg_surface_create_for_data(w, h, (void *)cat_img_128_128);
+
+	{
+		struct xfs_context_t * xfs;
+		xfs = xfs_alloc("/private/framework", 0);
+		if(xfs)
+		{
+			img = surface_alloc_from_xfs(xfs, filename);
+			/*
+struct surface_t
+{
+	int width;
+	int height;
+	int stride;
+	int pixlen;
+	void * pixels;
+	struct render_t * r;
+	void * rctx;
+	void * priv;
+};			*/
+			img->priv = cg_surface_create_for_data(img->width, img->height, img->pixels);
+			xfs_free(xfs);
+		}
+	}
+	printf("loaded image %s at 0x%p\r\n", filename, img);
+	return nk_image_ptr(img);
+}
 
 void nuklear_demo(void)
 {
@@ -441,7 +806,7 @@ void nuklear_demo(void)
 		cfg.oversample_h = 3; cfg.oversample_v = 2;
 		/* Loading one font with different heights is only required if you want higher
 		 * quality text otherwise you can just set the font height directly
-		 * e.g.: ctx->style.font.height = 20. */
+		 * e.g.: nkctx->style.font.height = 20. */
 		nk_font_atlas_init_default(&atlas);
 		nk_font_atlas_begin(&atlas);
 		media.font_14 = nk_font_atlas_add_from_file(&atlas, "/framework/assets/fonts/Roboto-Regular.ttf", 14.0f, &cfg);
@@ -462,16 +827,65 @@ void nuklear_demo(void)
 		media.font_22->handle.height = 22;
         media.font_22->handle.width = my_nk_text_width_f;
         
-		nk_init_default(&ctx, &media.font_14->handle);
+		nk_init_default(&nkctx, &media.font_14->handle);
+
+		const char *image_name = "assets/images/icon.png";
+		media.unchecked = image_load(/*"../icon/unchecked.png"*/image_name);
+		media.checked = image_load(/*"../icon/checked.png"*/image_name);
+		media.rocket = image_load(/*"../icon/rocket.png"*/image_name);
+		media.cloud = image_load(/*"../icon/cloud.png"*/image_name);
+		media.pen = image_load(/*"../icon/pen.png"*/image_name);
+		media.play = image_load(/*"../icon/play.png"*/image_name);
+		media.pause = image_load(/*"../icon/pause.png"*/image_name);
+		media.stop = image_load(/*"../icon/stop.png"*/image_name);
+		media.next =  image_load(/*"../icon/next.png")*/image_name);
+		media.prev =  image_load(/*"../icon/prev.png"*/image_name);
+		media.tools = image_load(/*"../icon/tools.png"*/image_name);
+		media.dir = image_load(/*"../icon/directory.png"*/image_name);
+		media.copy = image_load(/*"../icon/copy.png"*/image_name);
+		media.convert = image_load(/*"../icon/export.png"*/image_name);
+		media.del = image_load(/*"../icon/delete.png"*/image_name);
+		media.edit = image_load(/*"../icon/edit.png"*/image_name);
+		media.menu[0] = image_load(/*"../icon/home.png"*/image_name);
+		media.menu[1] = image_load(/*"../icon/phone.png"*/image_name);
+		media.menu[2] = image_load(/*"../icon/plane.png"*/image_name);
+		media.menu[3] = image_load(/*"../icon/wifi.png"*/image_name);
+		media.menu[4] = image_load(/*"../icon/settings.png"*/image_name);
+		media.menu[5] = image_load(/*"../icon/volume.png"*/image_name);
 	}
 	
-	grid_demo(&ctx, &media);
-	button_demo(&ctx, &media);
+	grid_demo(&nkctx, &media);
+	button_demo(&nkctx, &media);
+	basic_demo(&nkctx, &media);
 	
 	commands_render();
 }
 
+#include <graphic/text.h>
+static struct text_t txt;
+
+
+static void do_text(int x, int y, const char *utf8, unsigned count)
+{
+	struct matrix_t m;
+	matrix_init(&m, cgctx->state->matrix.a, cgctx->state->matrix.b, cgctx->state->matrix.c, cgctx->state->matrix.d, x+cgctx->state->matrix.tx, y+cgctx->state->matrix.ty);
+	text_set_text(&txt, utf8);
+	surface_text(current_surface, NULL, &m, &txt);
+}
+
 void render_test2(uint32_t *pixels, unsigned w, unsigned h, unsigned stride)
 {
+	if(cgctx == NULL)
+	{
+		struct cg_surface_t * surface = cg_surface_create_for_data(w, h, pixels);
+		surface->stride = stride;
+		cgctx = cg_create(surface);
+		//cg_matrix_translate(&cgctx->state->matrix, 800/2, 0);
+		
+		txt.fctx = font_context_alloc();
+		static struct color_t text_color = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF}; //WARNING: not copied, pointer used
+		text_init(&txt, "", &text_color, 0, txt.fctx, NULL, 12); //default family
+	}
 	nuklear_demo();
+	{static int y = 0;  do_text(10, y, "Hello", 5); if(++y>=WINDOW_HEIGHT) y=0; }
 }
