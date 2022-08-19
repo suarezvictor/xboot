@@ -474,11 +474,25 @@ static void do_stretch_blit(int x, int y, int w, int h, const struct surface_t *
 {
 	struct matrix_t m;
 	matrix_init_identity(&m);
-	matrix_translate(&m, x, y);
-	matrix_scale(&m, (double)w/img->width, (double)h/img->height);
-	//struct region_t r;
-	//region_init(&r, x, y, w, h); //clip not needed since scaled
-	surface_blit(current_surface, /*&r*/NULL, &m, img);
+	if(w != img->width || h != img->height)
+	{
+		matrix_translate(&m, x, y);
+		matrix_scale(&m, (double)w/img->width, (double)h/img->height);
+		//struct region_t r;
+		//region_init(&r, x, y, w, h); //clip not needed since scaled
+		//surface_blit(current_surface, /*&r*/NULL, &m, img);
+		
+		surface_shape_save(current_surface);
+		surface_shape_set_matrix(current_surface, &m);
+		surface_shape_set_source(current_surface, img, 0, 0);
+		surface_shape_paint(current_surface);
+		surface_shape_restore(current_surface);	
+	}
+	else
+	{
+		surface_shape_set_source(current_surface, img, x, y);
+		surface_shape_paint(current_surface);
+	}
 }
 
 static void do_text(int x, int y, const char *utf8, unsigned count);
@@ -496,7 +510,21 @@ static void commands_render()
         case NK_COMMAND_SCISSOR: {
             const struct nk_command_scissor *s =(const struct nk_command_scissor*)cmd;
         	cmdname = "NK_COMMAND_SCISSOR";
-            //al_set_clipping_rectangle((int)s->x, (int)s->y, (int)s->w, (int)s->h);
+            /*
+struct nk_command_scissor {
+    struct nk_command header;
+    short x, y;
+    unsigned short w, h;
+};
+            */
+			printf("nk_command_scissor x %d, y %d, w %d, h %d\r\n", s->x, s->y, s->w, s->h);
+            if(cgctx)
+            {
+				cgctx->clip.x = s->x;
+				cgctx->clip.y = s->y;
+				cgctx->clip.w = s->w;
+				cgctx->clip.h = s->h;
+			}
         } break;
         case NK_COMMAND_LINE: {
             const struct nk_command_line *l = (const struct nk_command_line *)cmd;
