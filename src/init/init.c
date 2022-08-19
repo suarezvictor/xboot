@@ -28,7 +28,67 @@
 
 #include <xboot.h>
 #include <init.h>
+/*
+static void graphics_test(struct framebuffer_t * fb, struct surface_t *s)
+{
+	struct matrix_t m;
+	struct color_t c;
+	color_init(&c, 0, 0, 0, 0xff);
+	matrix_init_identity(&m);
 
+	surface_fill(s, NULL, &m, surface_get_width(s), surface_get_height(s), &c); //clear background
+	int tpos;
+	for(tpos = 5; tpos < surface_get_height(s)-5; ++tpos)
+	{
+		color_init(&c, (unsigned char)(0x33+tpos/4), (unsigned char)(0x99-tpos/2), (unsigned char)(0xcc+tpos), 0xff);
+		matrix_init_identity(&m);
+		matrix_init_translate(&m, 5, 5);
+		surface_fill(s, NULL, &m, surface_get_width(s)-10, surface_get_height(s)-10, &c);
+
+		color_init(&c, (unsigned char)(0x33+tpos), (unsigned char)(0xcc-tpos/4), (unsigned char)(0x99+tpos/2), 0xff);
+		matrix_init_identity(&m);
+		matrix_init_translate(&m, 50, 50);
+		surface_fill(s, NULL, &m, surface_get_width(s)-100, surface_get_height(s)-100, &c);
+		
+		framebuffer_present_surface(fb, s, NULL);
+#ifdef __SANDBOX__
+		usleep(1000000/60);
+#endif
+	}
+}
+*/
+
+static void graphics_test2(struct framebuffer_t * fb, struct surface_t *s)
+{
+	for(;;)
+	{
+		void render_test(uint32_t *pixels, unsigned w, unsigned h, unsigned stride);
+		//render_test(s->pixels, s->width, s->height, s->stride);
+		void render_test2(uint32_t *pixels, unsigned w, unsigned h, unsigned stride);
+		render_test2(s->pixels, s->width, s->height, s->stride);
+		framebuffer_present_surface(fb, s, NULL);
+	}
+}
+
+
+struct surface_t *current_surface = NULL;
+
+void do_demo(void)
+{
+	struct device_t * pos, * n;
+	struct framebuffer_t * fb;
+	list_for_each_entry_safe(pos, n, &__device_head[DEVICE_TYPE_FRAMEBUFFER], head)
+	{
+		if((fb = (struct framebuffer_t *)(pos->priv)))
+		{
+			struct surface_t *s = framebuffer_create_surface(fb);
+			current_surface = s;
+			graphics_test2(fb, s);
+			framebuffer_destroy_surface(fb, s);
+		}
+	}
+
+}
 void do_show_logo(void)
 {
 	struct device_t * pos, * n;

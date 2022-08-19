@@ -13,7 +13,7 @@ PLATFORM		?=
 #
 CFG_FRAMEWORK	?= y
 CFG_CAIRO		?= y
-CFG_WBOXTEST 	?= n
+CFG_WBOXTEST 	?= y
 
 #
 # Xboot version
@@ -88,7 +88,7 @@ LDFLAGS		+=	-Wl,-gc-sections
 #
 INCDIRS		+=	include \
 				arch/$(ARCH)/include \
-				arch/$(ARCH)/$(MACH)/include
+				arch/$(ARCH)/$(MACH)/include /media/vsuarez/elocaldata/SCRATCH/ucGPU/demos/third-party/microwindows/src/include /media/vsuarez/elocaldata/SCRATCH/Nuklear/
 
 SRCDIRS		+=	arch/$(ARCH)/lib/cpu \
 				arch/$(ARCH)/lib \
@@ -172,7 +172,8 @@ SRCDIRS		+=	arch/$(ARCH)/lib/cpu \
 				driver/thermometer \
 				driver/uart \
 				driver/vibrator \
-				driver/watchdog
+				driver/watchdog \
+				tests
 
 #
 # Add necessary external library
