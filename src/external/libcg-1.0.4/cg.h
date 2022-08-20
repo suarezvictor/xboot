@@ -4,36 +4,37 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef double cg_float_t;
 
 #include <swft.h>
 
 struct cg_point_t {
-	double x;
-	double y;
+	cg_float_t x;
+	cg_float_t y;
 };
 
 struct cg_rect_t {
-	double x;
-	double y;
-	double w;
-	double h;
+	cg_float_t x;
+	cg_float_t y;
+	cg_float_t w;
+	cg_float_t h;
 };
 
 struct cg_matrix_t {
-	double a; double b;
-	double c; double d;
-	double tx; double ty;
+	cg_float_t a; cg_float_t b;
+	cg_float_t c; cg_float_t d;
+	cg_float_t tx; cg_float_t ty;
 };
 
 struct cg_color_t {
-	double r;
-	double g;
-	double b;
-	double a;
+	cg_float_t r;
+	cg_float_t g;
+	cg_float_t b;
+	cg_float_t a;
 };
 
 struct cg_gradient_stop_t {
-	double offset;
+	cg_float_t offset;
 	struct cg_color_t color;
 };
 
@@ -120,8 +121,8 @@ struct cg_gradient_t {
 	enum cg_gradient_type_t type;
 	enum cg_spread_method_t spread;
 	struct cg_matrix_t matrix;
-	double values[6];
-	double opacity;
+	cg_float_t values[6];
+	cg_float_t opacity;
 	struct {
 		struct cg_gradient_stop_t * data;
 		int size;
@@ -134,7 +135,7 @@ struct cg_texture_t {
 	enum cg_texture_type_t type;
 	struct cg_surface_t * surface;
 	struct cg_matrix_t matrix;
-	double opacity;
+	cg_float_t opacity;
 };
 
 struct cg_paint_t {
@@ -167,14 +168,14 @@ struct cg_rle_t {
 };
 
 struct cg_dash_t {
-	double offset;
-	double * data;
+	cg_float_t offset;
+	cg_float_t * data;
 	int size;
 };
 
 struct cg_stroke_data_t {
-	double width;
-	double miterlimit;
+	cg_float_t width;
+	cg_float_t miterlimit;
 	enum cg_line_cap_t cap;
 	enum cg_line_join_t join;
 	struct cg_dash_t * dash;
@@ -187,7 +188,7 @@ struct cg_state_t {
 	enum cg_fill_rule_t winding;
 	struct cg_stroke_data_t stroke;
 	enum cg_operator_t op;
-	double opacity;
+	cg_float_t opacity;
 	struct cg_state_t * next;
 };
 
@@ -229,14 +230,14 @@ void cg_comp_source_over(uint32_t * dst, int len, uint32_t * src, uint32_t alpha
 void cg_comp_destination_in(uint32_t * dst, int len, uint32_t * src, uint32_t alpha);
 void cg_comp_destination_out(uint32_t * dst, int len, uint32_t * src, uint32_t alpha);
 
-void cg_matrix_init(struct cg_matrix_t * m, double a, double b, double c, double d, double tx, double ty);
+void cg_matrix_init(struct cg_matrix_t * m, cg_float_t a, cg_float_t b, cg_float_t c, cg_float_t d, cg_float_t tx, cg_float_t ty);
 void cg_matrix_init_identity(struct cg_matrix_t * m);
-void cg_matrix_init_translate(struct cg_matrix_t * m, double tx, double ty);
-void cg_matrix_init_scale(struct cg_matrix_t * m, double sx, double sy);
-void cg_matrix_init_rotate(struct cg_matrix_t * m, double r);
-void cg_matrix_translate(struct cg_matrix_t * m, double tx, double ty);
-void cg_matrix_scale(struct cg_matrix_t * m, double sx, double sy);
-void cg_matrix_rotate(struct cg_matrix_t * m, double r);
+void cg_matrix_init_translate(struct cg_matrix_t * m, cg_float_t tx, cg_float_t ty);
+void cg_matrix_init_scale(struct cg_matrix_t * m, cg_float_t sx, cg_float_t sy);
+void cg_matrix_init_rotate(struct cg_matrix_t * m, cg_float_t r);
+void cg_matrix_translate(struct cg_matrix_t * m, cg_float_t tx, cg_float_t ty);
+void cg_matrix_scale(struct cg_matrix_t * m, cg_float_t sx, cg_float_t sy);
+void cg_matrix_rotate(struct cg_matrix_t * m, cg_float_t r);
 void cg_matrix_multiply(struct cg_matrix_t * m, struct cg_matrix_t * m1, struct cg_matrix_t * m2);
 void cg_matrix_invert(struct cg_matrix_t * m);
 void cg_matrix_map_point(struct cg_matrix_t * m, struct cg_point_t * p1, struct cg_point_t * p2);
@@ -250,18 +251,18 @@ struct cg_path_t * cg_path_create(void);
 void cg_path_destroy(struct cg_path_t * path);
 struct cg_path_t * cg_path_reference(struct cg_path_t * path);
 
-struct cg_gradient_t * cg_gradient_create_linear(double x1, double y1, double x2, double y2);
-struct cg_gradient_t * cg_gradient_create_radial(double cx, double cy, double cr, double fx, double fy, double fr);
+struct cg_gradient_t * cg_gradient_create_linear(cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2);
+struct cg_gradient_t * cg_gradient_create_radial(cg_float_t cx, cg_float_t cy, cg_float_t cr, cg_float_t fx, cg_float_t fy, cg_float_t fr);
 void cg_gradient_destroy(struct cg_gradient_t * gradient);
 struct cg_gradient_t * cg_gradient_reference(struct cg_gradient_t * gradient);
 void cg_gradient_set_spread(struct cg_gradient_t * gradient, enum cg_spread_method_t spread);
 void cg_gradient_set_matrix(struct cg_gradient_t * gradient, struct cg_matrix_t * m);
-void cg_gradient_add_stop_rgb(struct cg_gradient_t * gradient, double offset, double r, double g, double b);
-void cg_gradient_add_stop_rgba(struct cg_gradient_t * gradient, double offset, double r, double g, double b, double a);
-void cg_gradient_add_stop_color(struct cg_gradient_t * gradient, double offset, struct cg_color_t * color);
+void cg_gradient_add_stop_rgb(struct cg_gradient_t * gradient, cg_float_t offset, cg_float_t r, cg_float_t g, cg_float_t b);
+void cg_gradient_add_stop_rgba(struct cg_gradient_t * gradient, cg_float_t offset, cg_float_t r, cg_float_t g, cg_float_t b, cg_float_t a);
+void cg_gradient_add_stop_color(struct cg_gradient_t * gradient, cg_float_t offset, struct cg_color_t * color);
 void cg_gradient_add_stop(struct cg_gradient_t * gradient, struct cg_gradient_stop_t * stop);
 void cg_gradient_clear_stops(struct cg_gradient_t * gradient);
-void cg_gradient_set_opacity(struct cg_gradient_t * paint, double opacity);
+void cg_gradient_set_opacity(struct cg_gradient_t * paint, cg_float_t opacity);
 
 struct cg_texture_t * cg_texture_create(struct cg_surface_t * surface);
 void cg_texture_destroy(struct cg_texture_t * texture);
@@ -269,12 +270,12 @@ struct cg_texture_t * cg_texture_reference(struct cg_texture_t * texture);
 void cg_texture_set_type(struct cg_texture_t * texture, enum cg_texture_type_t type);
 void cg_texture_set_matrix(struct cg_texture_t * texture, struct cg_matrix_t * m);
 void cg_texture_set_surface(struct cg_texture_t * texture, struct cg_surface_t * surface);
-void cg_texture_set_opacity(struct cg_texture_t * texture, double opacity);
+void cg_texture_set_opacity(struct cg_texture_t * texture, cg_float_t opacity);
 
-struct cg_paint_t * cg_paint_create_rgb(double r, double g, double b);
-struct cg_paint_t * cg_paint_create_rgba(double r, double g, double b, double a);
-struct cg_paint_t * cg_paint_create_linear(double x1, double y1, double x2, double y2);
-struct cg_paint_t * cg_paint_create_radial(double cx, double cy, double cr, double fx, double fy, double fr);
+struct cg_paint_t * cg_paint_create_rgb(cg_float_t r, cg_float_t g, cg_float_t b);
+struct cg_paint_t * cg_paint_create_rgba(cg_float_t r, cg_float_t g, cg_float_t b, cg_float_t a);
+struct cg_paint_t * cg_paint_create_linear(cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2);
+struct cg_paint_t * cg_paint_create_radial(cg_float_t cx, cg_float_t cy, cg_float_t cr, cg_float_t fx, cg_float_t fy, cg_float_t fr);
 struct cg_paint_t * cg_paint_create_for_surface(struct cg_surface_t * surface);
 struct cg_paint_t * cg_paint_create_color(struct cg_color_t * color);
 struct cg_paint_t * cg_paint_create_gradient(struct cg_gradient_t * gradient);
@@ -290,41 +291,41 @@ struct cg_ctx_t * cg_create(struct cg_surface_t * surface);
 void cg_destroy(struct cg_ctx_t * ctx);
 void cg_save(struct cg_ctx_t * ctx);
 void cg_restore(struct cg_ctx_t * ctx);
-void cg_set_source_rgb(struct cg_ctx_t * ctx, double r, double g, double b);
-void cg_set_source_rgba(struct cg_ctx_t * ctx, double r, double g, double b, double a);
-void cg_set_source_surface(struct cg_ctx_t * ctx, struct cg_surface_t * surface, double x, double y);
+void cg_set_source_rgb(struct cg_ctx_t * ctx, cg_float_t r, cg_float_t g, cg_float_t b);
+void cg_set_source_rgba(struct cg_ctx_t * ctx, cg_float_t r, cg_float_t g, cg_float_t b, cg_float_t a);
+void cg_set_source_surface(struct cg_ctx_t * ctx, struct cg_surface_t * surface, cg_float_t x, cg_float_t y);
 void cg_set_source_color(struct cg_ctx_t * ctx, struct cg_color_t * color);
 void cg_set_source_gradient(struct cg_ctx_t * ctx, struct cg_gradient_t * gradient);
 void cg_set_source_texture(struct cg_ctx_t * ctx, struct cg_texture_t * texture);
 void cg_set_source(struct cg_ctx_t * ctx, struct cg_paint_t * source);
 void cg_set_operator(struct cg_ctx_t * ctx, enum cg_operator_t op);
-void cg_set_opacity(struct cg_ctx_t * ctx, double opacity);
+void cg_set_opacity(struct cg_ctx_t * ctx, cg_float_t opacity);
 void cg_set_fill_rule(struct cg_ctx_t * ctx, enum cg_fill_rule_t winding);
-void cg_set_line_width(struct cg_ctx_t * ctx, double width);
+void cg_set_line_width(struct cg_ctx_t * ctx, cg_float_t width);
 void cg_set_line_cap(struct cg_ctx_t * ctx, enum cg_line_cap_t cap);
 void cg_set_line_join(struct cg_ctx_t * ctx, enum cg_line_join_t join);
-void cg_set_miter_limit(struct cg_ctx_t * ctx, double limit);
-void cg_set_dash(struct cg_ctx_t * ctx, double * dashes, int ndash, double offset);
-void cg_translate(struct cg_ctx_t * ctx, double tx, double ty);
-void cg_scale(struct cg_ctx_t * ctx, double sx, double sy);
-void cg_rotate(struct cg_ctx_t * ctx, double r);
+void cg_set_miter_limit(struct cg_ctx_t * ctx, cg_float_t limit);
+void cg_set_dash(struct cg_ctx_t * ctx, cg_float_t * dashes, int ndash, cg_float_t offset);
+void cg_translate(struct cg_ctx_t * ctx, cg_float_t tx, cg_float_t ty);
+void cg_scale(struct cg_ctx_t * ctx, cg_float_t sx, cg_float_t sy);
+void cg_rotate(struct cg_ctx_t * ctx, cg_float_t r);
 void cg_transform(struct cg_ctx_t * ctx, struct cg_matrix_t * m);
 void cg_set_matrix(struct cg_ctx_t * ctx, struct cg_matrix_t * m);
 void cg_identity_matrix(struct cg_ctx_t * ctx);
-void cg_move_to(struct cg_ctx_t * ctx, double x, double y);
-void cg_line_to(struct cg_ctx_t * ctx, double x, double y);
-void cg_curve_to(struct cg_ctx_t * ctx, double x1, double y1, double x2, double y2, double x3, double y3);
-void cg_quad_to(struct cg_ctx_t * ctx, double x1, double y1, double x2, double y2);
-void cg_rel_move_to(struct cg_ctx_t * ctx, double dx, double dy);
-void cg_rel_line_to(struct cg_ctx_t * ctx, double dx, double dy);
-void cg_rel_curve_to(struct cg_ctx_t * ctx, double dx1, double dy1, double dx2, double dy2, double dx3, double dy3);
-void cg_rel_quad_to(struct cg_ctx_t * ctx, double dx1, double dy1, double dx2, double dy2);
-void cg_rectangle(struct cg_ctx_t * ctx, double x, double y, double w, double h);
-void cg_round_rectangle(struct cg_ctx_t * ctx, double x, double y, double w, double h, double rx, double ry);
-void cg_ellipse(struct cg_ctx_t * ctx, double cx, double cy, double rx, double ry);
-void cg_circle(struct cg_ctx_t * ctx, double cx, double cy, double r);
-void cg_arc(struct cg_ctx_t * ctx, double cx, double cy, double r, double a0, double a1);
-void cg_arc_negative(struct cg_ctx_t * ctx, double cx, double cy, double r, double a0, double a1);
+void cg_move_to(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y);
+void cg_line_to(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y);
+void cg_curve_to(struct cg_ctx_t * ctx, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2, cg_float_t x3, cg_float_t y3);
+void cg_quad_to(struct cg_ctx_t * ctx, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2);
+void cg_rel_move_to(struct cg_ctx_t * ctx, cg_float_t dx, cg_float_t dy);
+void cg_rel_line_to(struct cg_ctx_t * ctx, cg_float_t dx, cg_float_t dy);
+void cg_rel_curve_to(struct cg_ctx_t * ctx, cg_float_t dx1, cg_float_t dy1, cg_float_t dx2, cg_float_t dy2, cg_float_t dx3, cg_float_t dy3);
+void cg_rel_quad_to(struct cg_ctx_t * ctx, cg_float_t dx1, cg_float_t dy1, cg_float_t dx2, cg_float_t dy2);
+void cg_rectangle(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y, cg_float_t w, cg_float_t h);
+void cg_round_rectangle(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y, cg_float_t w, cg_float_t h, cg_float_t rx, cg_float_t ry);
+void cg_ellipse(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t rx, cg_float_t ry);
+void cg_circle(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t r);
+void cg_arc(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t r, cg_float_t a0, cg_float_t a1);
+void cg_arc_negative(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t r, cg_float_t a0, cg_float_t a1);
 void cg_new_path(struct cg_ctx_t * ctx);
 void cg_close_path(struct cg_ctx_t * ctx);
 void cg_reset_clip(struct cg_ctx_t * ctx);

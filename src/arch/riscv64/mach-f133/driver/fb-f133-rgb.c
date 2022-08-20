@@ -54,7 +54,7 @@ struct fb_f133_rgb_pdata_t
 	int bytes_per_pixel;
 	int pixlen;
 	int index;
-	void * vram[2];
+	void * vram[3]; //triple buffer
 	struct region_list_t * nrl, * orl;
 
 	struct {
@@ -75,13 +75,13 @@ struct fb_f133_rgb_pdata_t
 	int brightness;
 };
 
-static void inline f133_de_enable(struct fb_f133_rgb_pdata_t * pdat)
+/*static inline*/ void f133_de_enable(struct fb_f133_rgb_pdata_t * pdat)
 {
 	struct de_glb_t * glb = (struct de_glb_t *)(pdat->virt_de + F133_DE_MUX_GLB);
 	write32((virtual_addr_t)&glb->dbuff, 1);
 }
 
-static inline void f133_de_set_address(struct fb_f133_rgb_pdata_t * pdat, void * vram)
+/*static inline*/ void f133_de_set_address(struct fb_f133_rgb_pdata_t * pdat, void * vram)
 {
 	struct de_ui_t * ui = (struct de_ui_t *)(pdat->virt_de + F133_DE_MUX_CHAN + 0x1000 * 1);
 	write32((virtual_addr_t)&ui->cfg[0].top_laddr, (u32_t)(unsigned long)vram);
@@ -218,7 +218,8 @@ static void f133_tconlcd_set_timing(struct fb_f133_rgb_pdata_t * pdat)
 static void f133_tconlcd_set_dither(struct fb_f133_rgb_pdata_t * pdat)
 {
 	struct f133_tconlcd_reg_t * tcon = (struct f133_tconlcd_reg_t *)pdat->virt_tconlcd;
-
+	//dither is temporal so if not all color wires are connected, some pixels flicker
+	if(0)
 	if((pdat->bits_per_pixel == 16) || (pdat->bits_per_pixel == 18))
 	{
 		write32((virtual_addr_t)&tcon->frm_seed[0], 0x11111111);
@@ -358,10 +359,12 @@ static struct device_t * fb_f133_rgb_probe(struct driver_t * drv, struct dtnode_
 	pdat->index = 0;
 	pdat->vram[0] = dma_alloc_noncoherent(pdat->pixlen);
 	pdat->vram[1] = dma_alloc_noncoherent(pdat->pixlen);
+	pdat->vram[2] = dma_alloc_noncoherent(pdat->pixlen);
 	pdat->nrl = region_list_alloc(0);
 	pdat->orl = region_list_alloc(0);
 	memset(pdat->vram[0], 0, pdat->pixlen);
 	memset(pdat->vram[1], 0, pdat->pixlen);
+	memset(pdat->vram[2], 0, pdat->pixlen);
 
 	pdat->timing.pixel_clock_hz = dt_read_long(n, "clock-frequency", 33000000);
 	pdat->timing.h_front_porch = dt_read_int(n, "hfront-porch", 40);
@@ -404,6 +407,7 @@ static struct device_t * fb_f133_rgb_probe(struct driver_t * drv, struct dtnode_
 		free(pdat->clk_tconlcd);
 		dma_free_noncoherent(pdat->vram[0]);
 		dma_free_noncoherent(pdat->vram[1]);
+		dma_free_noncoherent(pdat->vram[2]);
 		region_list_free(pdat->nrl);
 		region_list_free(pdat->orl);
 		free_device_name(fb->name);
@@ -428,6 +432,7 @@ static void fb_f133_rgb_remove(struct device_t * dev)
 		free(pdat->clk_tconlcd);
 		dma_free_noncoherent(pdat->vram[0]);
 		dma_free_noncoherent(pdat->vram[1]);
+		dma_free_noncoherent(pdat->vram[2]);
 		region_list_free(pdat->nrl);
 		region_list_free(pdat->orl);
 		free_device_name(fb->name);

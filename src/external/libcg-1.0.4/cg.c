@@ -45,7 +45,7 @@
 		} \
 	} while(0)
 
-static inline void cg_color_init_rgba(struct cg_color_t * color, double r, double g, double b, double a)
+static inline void cg_color_init_rgba(struct cg_color_t * color, cg_float_t r, cg_float_t g, cg_float_t b, cg_float_t a)
 {
 	color->r = r;
 	color->g = g;
@@ -53,7 +53,7 @@ static inline void cg_color_init_rgba(struct cg_color_t * color, double r, doubl
 	color->a = a;
 }
 
-static inline void cg_rect_init(struct cg_rect_t * rect, double x, double y, double w, double h)
+static inline void cg_rect_init(struct cg_rect_t * rect, cg_float_t x, cg_float_t y, cg_float_t w, cg_float_t h)
 {
 	rect->x = x;
 	rect->y = y;
@@ -61,7 +61,7 @@ static inline void cg_rect_init(struct cg_rect_t * rect, double x, double y, dou
 	rect->h = h;
 }
 
-void cg_matrix_init(struct cg_matrix_t * m, double a, double b, double c, double d, double tx, double ty)
+void cg_matrix_init(struct cg_matrix_t * m, cg_float_t a, cg_float_t b, cg_float_t c, cg_float_t d, cg_float_t tx, cg_float_t ty)
 {
 	m->a = a;   m->b = b;
 	m->c = c;   m->d = d;
@@ -75,37 +75,37 @@ void cg_matrix_init_identity(struct cg_matrix_t * m)
 	m->tx = 0; m->ty = 0;
 }
 
-void cg_matrix_init_translate(struct cg_matrix_t * m, double tx, double ty)
+void cg_matrix_init_translate(struct cg_matrix_t * m, cg_float_t tx, cg_float_t ty)
 {
 	m->a = 1;   m->b = 0;
 	m->c = 0;   m->d = 1;
 	m->tx = tx; m->ty = ty;
 }
 
-void cg_matrix_init_scale(struct cg_matrix_t * m, double sx, double sy)
+void cg_matrix_init_scale(struct cg_matrix_t * m, cg_float_t sx, cg_float_t sy)
 {
 	m->a = sx; m->b = 0;
 	m->c = 0;  m->d = sy;
 	m->tx = 0; m->ty = 0;
 }
 
-void cg_matrix_init_rotate(struct cg_matrix_t * m, double r)
+void cg_matrix_init_rotate(struct cg_matrix_t * m, cg_float_t r)
 {
-	double s = sin(r);
-	double c = cos(r);
+	cg_float_t s = sin(r);
+	cg_float_t c = cos(r);
 
 	m->a = c;   m->b = s;
 	m->c = -s;  m->d = c;
 	m->tx = 0;  m->ty = 0;
 }
 
-void cg_matrix_translate(struct cg_matrix_t * m, double tx, double ty)
+void cg_matrix_translate(struct cg_matrix_t * m, cg_float_t tx, cg_float_t ty)
 {
 	m->tx += m->a * tx + m->c * ty;
 	m->ty += m->b * tx + m->d * ty;
 }
 
-void cg_matrix_scale(struct cg_matrix_t * m, double sx, double sy)
+void cg_matrix_scale(struct cg_matrix_t * m, cg_float_t sx, cg_float_t sy)
 {
 	m->a *= sx;
 	m->b *= sx;
@@ -113,18 +113,18 @@ void cg_matrix_scale(struct cg_matrix_t * m, double sx, double sy)
 	m->d *= sy;
 }
 
-void cg_matrix_rotate(struct cg_matrix_t * m, double r)
+void cg_matrix_rotate(struct cg_matrix_t * m, cg_float_t r)
 {
-	double s = sin(r);
-	double c = cos(r);
-	double ca = c * m->a;
-	double cb = c * m->b;
-	double cc = c * m->c;
-	double cd = c * m->d;
-	double sa = s * m->a;
-	double sb = s * m->b;
-	double sc = s * m->c;
-	double sd = s * m->d;
+	cg_float_t s = sin(r);
+	cg_float_t c = cos(r);
+	cg_float_t ca = c * m->a;
+	cg_float_t cb = c * m->b;
+	cg_float_t cc = c * m->c;
+	cg_float_t cd = c * m->d;
+	cg_float_t sa = s * m->a;
+	cg_float_t sb = s * m->b;
+	cg_float_t sc = s * m->c;
+	cg_float_t sd = s * m->d;
 
 	m->a = ca + sc;
 	m->b = cb + sd;
@@ -156,8 +156,8 @@ void cg_matrix_multiply(struct cg_matrix_t * m, struct cg_matrix_t * m1, struct 
 
 void cg_matrix_invert(struct cg_matrix_t * m)
 {
-	double a, b, c, d, tx, ty;
-	double det;
+	cg_float_t a, b, c, d, tx, ty;
+	cg_float_t det;
 
 	if((m->c == 0.0) && (m->b == 0.0))
 	{
@@ -289,7 +289,7 @@ struct cg_path_t * cg_path_reference(struct cg_path_t * path)
 	return NULL;
 }
 
-static inline void cg_path_get_current_point(struct cg_path_t * path, double * x, double * y)
+static inline void cg_path_get_current_point(struct cg_path_t * path, cg_float_t * x, cg_float_t * y)
 {
 	if(path->points.size == 0)
 	{
@@ -303,7 +303,7 @@ static inline void cg_path_get_current_point(struct cg_path_t * path, double * x
 	}
 }
 
-static void cg_path_move_to(struct cg_path_t * path, double x, double y)
+static void cg_path_move_to(struct cg_path_t * path, cg_float_t x, cg_float_t y)
 {
 	cg_array_ensure(path->elements, 1);
 	cg_array_ensure(path->points, 1);
@@ -318,7 +318,7 @@ static void cg_path_move_to(struct cg_path_t * path, double x, double y)
 	path->start.y = y;
 }
 
-static void cg_path_line_to(struct cg_path_t * path, double x, double y)
+static void cg_path_line_to(struct cg_path_t * path, cg_float_t x, cg_float_t y)
 {
 	cg_array_ensure(path->elements, 1);
 	cg_array_ensure(path->points, 1);
@@ -330,7 +330,7 @@ static void cg_path_line_to(struct cg_path_t * path, double x, double y)
 	path->points.size += 1;
 }
 
-static void cg_path_curve_to(struct cg_path_t * path, double x1, double y1, double x2, double y2, double x3, double y3)
+static void cg_path_curve_to(struct cg_path_t * path, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2, cg_float_t x3, cg_float_t y3)
 {
 	cg_array_ensure(path->elements, 1);
 	cg_array_ensure(path->points, 3);
@@ -348,15 +348,15 @@ static void cg_path_curve_to(struct cg_path_t * path, double x1, double y1, doub
 	path->points.size += 1;
 }
 
-static void cg_path_quad_to(struct cg_path_t * path, double x1, double y1, double x2, double y2)
+static void cg_path_quad_to(struct cg_path_t * path, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2)
 {
-	double x, y;
+	cg_float_t x, y;
 	cg_path_get_current_point(path, &x, &y);
 
-	double cx = 2.0 / 3.0 * x1 + 1.0 / 3.0 * x;
-	double cy = 2.0 / 3.0 * y1 + 1.0 / 3.0 * y;
-	double cx1 = 2.0 / 3.0 * x1 + 1.0 / 3.0 * x2;
-	double cy1 = 2.0 / 3.0 * y1 + 1.0 / 3.0 * y2;
+	cg_float_t cx = 2.0 / 3.0 * x1 + 1.0 / 3.0 * x;
+	cg_float_t cy = 2.0 / 3.0 * y1 + 1.0 / 3.0 * y;
+	cg_float_t cx1 = 2.0 / 3.0 * x1 + 1.0 / 3.0 * x2;
+	cg_float_t cy1 = 2.0 / 3.0 * y1 + 1.0 / 3.0 * y2;
 	cg_path_curve_to(path, cx, cy, cx1, cy1, x2, y2);
 }
 
@@ -375,35 +375,35 @@ static void cg_path_close(struct cg_path_t * path)
 	path->points.size += 1;
 }
 
-static void cg_path_rel_move_to(struct cg_path_t * path, double dx, double dy)
+static void cg_path_rel_move_to(struct cg_path_t * path, cg_float_t dx, cg_float_t dy)
 {
-	double x, y;
+	cg_float_t x, y;
 	cg_path_get_current_point(path, &x, &y);
 	cg_path_move_to(path, dx + x, dy + y);
 }
 
-static void cg_path_rel_line_to(struct cg_path_t * path, double dx, double dy)
+static void cg_path_rel_line_to(struct cg_path_t * path, cg_float_t dx, cg_float_t dy)
 {
-	double x, y;
+	cg_float_t x, y;
 	cg_path_get_current_point(path, &x, &y);
 	cg_path_line_to(path, dx + x, dy + y);
 }
 
-static void cg_path_rel_curve_to(struct cg_path_t * path, double dx1, double dy1, double dx2, double dy2, double dx3, double dy3)
+static void cg_path_rel_curve_to(struct cg_path_t * path, cg_float_t dx1, cg_float_t dy1, cg_float_t dx2, cg_float_t dy2, cg_float_t dx3, cg_float_t dy3)
 {
-	double x, y;
+	cg_float_t x, y;
 	cg_path_get_current_point(path, &x, &y);
 	cg_path_curve_to(path, dx1 + x, dy1 + y, dx2 + x, dy2 + y, dx3 + x, dy3 + y);
 }
 
-static void cg_path_rel_quad_to(struct cg_path_t * path, double dx1, double dy1, double dx2, double dy2)
+static void cg_path_rel_quad_to(struct cg_path_t * path, cg_float_t dx1, cg_float_t dy1, cg_float_t dx2, cg_float_t dy2)
 {
-	double x, y;
+	cg_float_t x, y;
 	cg_path_get_current_point(path, &x, &y);
 	cg_path_quad_to(path, dx1 + x, dy1 + y, dx2 + x, dy2 + y);
 }
 
-static inline void cg_path_add_rectangle(struct cg_path_t * path, double x, double y, double w, double h)
+static inline void cg_path_add_rectangle(struct cg_path_t * path, cg_float_t x, cg_float_t y, cg_float_t w, cg_float_t h)
 {
 	cg_path_move_to(path, x, y);
 	cg_path_line_to(path, x + w, y);
@@ -413,15 +413,15 @@ static inline void cg_path_add_rectangle(struct cg_path_t * path, double x, doub
 	cg_path_close(path);
 }
 
-static inline void cg_path_add_round_rectangle(struct cg_path_t * path, double x, double y, double w, double h, double rx, double ry)
+static inline void cg_path_add_round_rectangle(struct cg_path_t * path, cg_float_t x, cg_float_t y, cg_float_t w, cg_float_t h, cg_float_t rx, cg_float_t ry)
 {
 	rx = CG_MIN(rx, w * 0.5);
 	ry = CG_MIN(ry, h * 0.5);
 
-	double right = x + w;
-	double bottom = y + h;
-	double cpx = rx * 0.55228474983079339840;
-	double cpy = ry * 0.55228474983079339840;
+	cg_float_t right = x + w;
+	cg_float_t bottom = y + h;
+	cg_float_t cpx = rx * 0.55228474983079339840;
+	cg_float_t cpy = ry * 0.55228474983079339840;
 
 	cg_path_move_to(path, x, y + ry);
 	cg_path_curve_to(path, x, y + ry - cpy, x + rx - cpx, y, x + rx, y);
@@ -435,14 +435,14 @@ static inline void cg_path_add_round_rectangle(struct cg_path_t * path, double x
 	cg_path_close(path);
 }
 
-static void cg_path_add_ellipse(struct cg_path_t * path, double cx, double cy, double rx, double ry)
+static void cg_path_add_ellipse(struct cg_path_t * path, cg_float_t cx, cg_float_t cy, cg_float_t rx, cg_float_t ry)
 {
-	double left = cx - rx;
-	double top = cy - ry;
-	double right = cx + rx;
-	double bottom = cy + ry;
-	double cpx = rx * 0.55228474983079339840;
-	double cpy = ry * 0.55228474983079339840;
+	cg_float_t left = cx - rx;
+	cg_float_t top = cy - ry;
+	cg_float_t right = cx + rx;
+	cg_float_t bottom = cy + ry;
+	cg_float_t cpx = rx * 0.55228474983079339840;
+	cg_float_t cpy = ry * 0.55228474983079339840;
 
 	cg_path_move_to(path, cx, top);
 	cg_path_curve_to(path, cx + cpx, top, right, cy - cpy, right, cy);
@@ -452,9 +452,9 @@ static void cg_path_add_ellipse(struct cg_path_t * path, double cx, double cy, d
 	cg_path_close(path);
 }
 
-static void cg_path_add_arc(struct cg_path_t * path, double cx, double cy, double r, double a0, double a1, int ccw)
+static void cg_path_add_arc(struct cg_path_t * path, cg_float_t cx, cg_float_t cy, cg_float_t r, cg_float_t a0, cg_float_t a1, int ccw)
 {
-	double da = a1 - a0;
+	cg_float_t da = a1 - a0;
 	if(fabs(da) > 6.28318530717958647693)
 	{
 		da = 6.28318530717958647693;
@@ -464,28 +464,28 @@ static void cg_path_add_arc(struct cg_path_t * path, double cx, double cy, doubl
 		da += 6.28318530717958647693 * (ccw ? -1 : 1);
 	}
 	int seg_n = (int)(ceil(fabs(da) / 1.57079632679489661923));
-	double seg_a = da / seg_n;
-	double d = (seg_a / 1.57079632679489661923) * 0.55228474983079339840 * r;
-	double a = a0;
-	double ax = cx + cos(a) * r;
-	double ay = cy + sin(a) * r;
-	double dx = -sin(a) * d;
-	double dy = cos(a) * d;
+	cg_float_t seg_a = da / seg_n;
+	cg_float_t d = (seg_a / 1.57079632679489661923) * 0.55228474983079339840 * r;
+	cg_float_t a = a0;
+	cg_float_t ax = cx + cos(a) * r;
+	cg_float_t ay = cy + sin(a) * r;
+	cg_float_t dx = -sin(a) * d;
+	cg_float_t dy = cos(a) * d;
 	if(path->points.size == 0)
 		cg_path_move_to(path, ax, ay);
 	else
 		cg_path_line_to(path, ax, ay);
 	for(int i = 0; i < seg_n; i++)
 	{
-		double cp1x = ax + dx;
-		double cp1y = ay + dy;
+		cg_float_t cp1x = ax + dx;
+		cg_float_t cp1y = ay + dy;
 		a += seg_a;
 		ax = cx + cos(a) * r;
 		ay = cy + sin(a) * r;
 		dx = -sin(a) * d;
 		dy = cos(a) * d;
-		double cp2x = ax - dx;
-		double cp2y = ay - dy;
+		cg_float_t cp2x = ax - dx;
+		cg_float_t cp2y = ay - dy;
 		cg_path_curve_to(path, cp1x, cp1y, cp2x, cp2y, ax, ay);
 	}
 }
@@ -500,15 +500,15 @@ static inline void cg_path_clear(struct cg_path_t * path)
 }
 
 struct cg_bezier_t {
-	double x1; double y1;
-	double x2; double y2;
-	double x3; double y3;
-	double x4; double y4;
+	cg_float_t x1; cg_float_t y1;
+	cg_float_t x2; cg_float_t y2;
+	cg_float_t x3; cg_float_t y3;
+	cg_float_t x4; cg_float_t y4;
 };
 
 static inline void split(struct cg_bezier_t * b, struct cg_bezier_t * first, struct cg_bezier_t * second)
 {
-	double c = (b->x2 + b->x3) * 0.5;
+	cg_float_t c = (b->x2 + b->x3) * 0.5;
 	first->x2 = (b->x1 + b->x2) * 0.5;
 	second->x3 = (b->x3 + b->x4) * 0.5;
 	first->x1 = b->x1;
@@ -542,10 +542,10 @@ static inline void flatten(struct cg_path_t * path, struct cg_point_t * p0, stru
 	beziers[0].y4 = p3->y;
 	while(b >= beziers)
 	{
-		double y4y1 = b->y4 - b->y1;
-		double x4x1 = b->x4 - b->x1;
-		double l = fabs(x4x1) + fabs(y4y1);
-		double d;
+		cg_float_t y4y1 = b->y4 - b->y1;
+		cg_float_t x4x1 = b->x4 - b->x1;
+		cg_float_t l = fabs(x4x1) + fabs(y4y1);
+		cg_float_t d;
 		if(l > 1.0)
 		{
 			d = fabs((x4x1) * (b->y1 - b->y2) - (y4y1) * (b->x1 - b->x2)) + fabs((x4x1) * (b->y1 - b->y3) - (y4y1) * (b->x1 - b->x3));
@@ -604,15 +604,15 @@ static inline struct cg_path_t * cg_path_clone_flat(struct cg_path_t * path)
 	return result;
 }
 
-static struct cg_dash_t * cg_dash_create(double * dashes, int ndash, double offset)
+static struct cg_dash_t * cg_dash_create(cg_float_t * dashes, int ndash, cg_float_t offset)
 {
 	if(dashes && (ndash > 0))
 	{
 		struct cg_dash_t * dash = malloc(sizeof(struct cg_dash_t));
 		dash->offset = offset;
-		dash->data = malloc((size_t)ndash * sizeof(double));
+		dash->data = malloc((size_t)ndash * sizeof(cg_float_t));
 		dash->size = ndash;
-		memcpy(dash->data, dashes, (size_t)ndash * sizeof(double));
+		memcpy(dash->data, dashes, (size_t)ndash * sizeof(cg_float_t));
 		return dash;
 	}
 	return NULL;
@@ -643,7 +643,7 @@ static inline struct cg_path_t * cg_dash_path(struct cg_dash_t * dash, struct cg
 
 	int toggle = 1;
 	int offset = 0;
-	double phase = dash->offset;
+	cg_float_t phase = dash->offset;
 	while(phase >= dash->data[offset])
 	{
 		toggle = !toggle;
@@ -659,25 +659,25 @@ static inline struct cg_path_t * cg_dash_path(struct cg_dash_t * dash, struct cg
 	{
 		int itoggle = toggle;
 		int ioffset = offset;
-		double iphase = phase;
-		double x0 = points->x;
-		double y0 = points->y;
+		cg_float_t iphase = phase;
+		cg_float_t x0 = points->x;
+		cg_float_t y0 = points->y;
 		if(itoggle)
 			cg_path_move_to(result, x0, y0);
 		++elements;
 		++points;
 		while((elements < end) && (*elements == CG_PATH_ELEMENT_LINE_TO))
 		{
-			double dx = points->x - x0;
-			double dy = points->y - y0;
-			double dist0 = sqrt(dx * dx + dy * dy);
-			double dist1 = 0;
+			cg_float_t dx = points->x - x0;
+			cg_float_t dy = points->y - y0;
+			cg_float_t dist0 = sqrt(dx * dx + dy * dy);
+			cg_float_t dist1 = 0;
 			while(dist0 - dist1 > dash->data[ioffset] - iphase)
 			{
 				dist1 += dash->data[ioffset] - iphase;
-				double a = dist1 / dist0;
-				double x = x0 + a * dx;
-				double y = y0 + a * dy;
+				cg_float_t a = dist1 / dist0;
+				cg_float_t x = x0 + a * dx;
+				cg_float_t y = y0 + a * dy;
 				if(itoggle)
 					cg_path_line_to(result, x, y);
 				else
@@ -723,7 +723,7 @@ static void sw_ft_outline_destroy(SW_FT_Outline * ft)
 }
 
 #define FT_COORD(x)	(SW_FT_Pos)((x) * 64)
-static void sw_ft_outline_move_to(SW_FT_Outline * ft, double x, double y)
+static void sw_ft_outline_move_to(SW_FT_Outline * ft, cg_float_t x, cg_float_t y)
 {
 	ft->points[ft->n_points].x = FT_COORD(x);
 	ft->points[ft->n_points].y = FT_COORD(y);
@@ -737,7 +737,7 @@ static void sw_ft_outline_move_to(SW_FT_Outline * ft, double x, double y)
 	ft->n_points++;
 }
 
-static void sw_ft_outline_line_to(SW_FT_Outline * ft, double x, double y)
+static void sw_ft_outline_line_to(SW_FT_Outline * ft, cg_float_t x, cg_float_t y)
 {
 	ft->points[ft->n_points].x = FT_COORD(x);
 	ft->points[ft->n_points].y = FT_COORD(y);
@@ -745,7 +745,7 @@ static void sw_ft_outline_line_to(SW_FT_Outline * ft, double x, double y)
 	ft->n_points++;
 }
 
-static void sw_ft_outline_curve_to(SW_FT_Outline * ft, double x1, double y1, double x2, double y2, double x3, double y3)
+static void sw_ft_outline_curve_to(SW_FT_Outline * ft, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2, cg_float_t x3, cg_float_t y3)
 {
 	ft->points[ft->n_points].x = FT_COORD(x1);
 	ft->points[ft->n_points].y = FT_COORD(y1);
@@ -897,11 +897,11 @@ static void cg_rle_rasterize(struct cg_rle_t * rle, struct cg_path_t * path, str
 		cg_matrix_map_point(m, &p1, &p1);
 		cg_matrix_map_point(m, &p2, &p2);
 
-		double dx = p2.x - p1.x;
-		double dy = p2.y - p1.y;
+		cg_float_t dx = p2.x - p1.x;
+		cg_float_t dy = p2.y - p1.y;
 
-		double scale = sqrt(dx * dx + dy * dy) / 2.0;
-		double radius = stroke->width / 2.0;
+		cg_float_t scale = sqrt(dx * dx + dy * dy) / 2.0;
+		cg_float_t radius = stroke->width / 2.0;
 
 		ftWidth = (SW_FT_Fixed)(radius * scale * (1 << 6));
 		ftMiterLimit = (SW_FT_Fixed)(stroke->miterlimit * (1 << 16));
@@ -1087,7 +1087,7 @@ static inline void cg_rle_clear(struct cg_rle_t * rle)
 	rle->h = 0;
 }
 
-struct cg_gradient_t * cg_gradient_create_linear(double x1, double y1, double x2, double y2)
+struct cg_gradient_t * cg_gradient_create_linear(cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2)
 {
 	struct cg_gradient_t * gradient = malloc(sizeof(struct cg_gradient_t));
 
@@ -1104,7 +1104,7 @@ struct cg_gradient_t * cg_gradient_create_linear(double x1, double y1, double x2
 	return gradient;
 }
 
-struct cg_gradient_t * cg_gradient_create_radial(double cx, double cy, double cr, double fx, double fy, double fr)
+struct cg_gradient_t * cg_gradient_create_radial(cg_float_t cx, cg_float_t cy, cg_float_t cr, cg_float_t fx, cg_float_t fy, cg_float_t fr)
 {
 	struct cg_gradient_t * gradient = malloc(sizeof(struct cg_gradient_t));
 
@@ -1155,12 +1155,12 @@ void cg_gradient_set_matrix(struct cg_gradient_t * gradient, struct cg_matrix_t 
 	memcpy(&gradient->matrix, m, sizeof(struct cg_matrix_t));
 }
 
-void cg_gradient_add_stop_rgb(struct cg_gradient_t * gradient, double offset, double r, double g, double b)
+void cg_gradient_add_stop_rgb(struct cg_gradient_t * gradient, cg_float_t offset, cg_float_t r, cg_float_t g, cg_float_t b)
 {
 	cg_gradient_add_stop_rgba(gradient, offset, r, g, b, 1.0);
 }
 
-void cg_gradient_add_stop_rgba(struct cg_gradient_t * gradient, double offset, double r, double g, double b, double a)
+void cg_gradient_add_stop_rgba(struct cg_gradient_t * gradient, cg_float_t offset, cg_float_t r, cg_float_t g, cg_float_t b, cg_float_t a)
 {
 	if(offset < 0.0)
 		offset = 0.0;
@@ -1184,7 +1184,7 @@ void cg_gradient_add_stop_rgba(struct cg_gradient_t * gradient, double offset, d
 	gradient->stops.size += 1;
 }
 
-void cg_gradient_add_stop_color(struct cg_gradient_t * gradient, double offset, struct cg_color_t * color)
+void cg_gradient_add_stop_color(struct cg_gradient_t * gradient, cg_float_t offset, struct cg_color_t * color)
 {
 	cg_gradient_add_stop_rgba(gradient, offset, color->r, color->g, color->b, color->a);
 }
@@ -1199,7 +1199,7 @@ void cg_gradient_clear_stops(struct cg_gradient_t * gradient)
 	gradient->stops.size = 0;
 }
 
-void cg_gradient_set_opacity(struct cg_gradient_t * gradient, double opacity)
+void cg_gradient_set_opacity(struct cg_gradient_t * gradient, cg_float_t opacity)
 {
 	gradient->opacity = CG_CLAMP(opacity, 0.0, 1.0);
 }
@@ -1254,17 +1254,17 @@ void cg_texture_set_surface(struct cg_texture_t * texture, struct cg_surface_t *
 	texture->surface = surface;
 }
 
-void cg_texture_set_opacity(struct cg_texture_t * texture, double opacity)
+void cg_texture_set_opacity(struct cg_texture_t * texture, cg_float_t opacity)
 {
 	texture->opacity = CG_CLAMP(opacity, 0.0, 1.0);
 }
 
-struct cg_paint_t * cg_paint_create_rgb(double r, double g, double b)
+struct cg_paint_t * cg_paint_create_rgb(cg_float_t r, cg_float_t g, cg_float_t b)
 {
 	return cg_paint_create_rgba(r, g, b, 1.0);
 }
 
-struct cg_paint_t * cg_paint_create_rgba(double r, double g, double b, double a)
+struct cg_paint_t * cg_paint_create_rgba(cg_float_t r, cg_float_t g, cg_float_t b, cg_float_t a)
 {
 	struct cg_paint_t * paint = malloc(sizeof(struct cg_paint_t));
 	paint->ref = 1;
@@ -1274,7 +1274,7 @@ struct cg_paint_t * cg_paint_create_rgba(double r, double g, double b, double a)
 	return paint;
 }
 
-struct cg_paint_t * cg_paint_create_linear(double x1, double y1, double x2, double y2)
+struct cg_paint_t * cg_paint_create_linear(cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2)
 {
 	struct cg_gradient_t * gradient = cg_gradient_create_linear(x1, y1, x2, y2);
 	struct cg_paint_t * paint = cg_paint_create_gradient(gradient);
@@ -1282,7 +1282,7 @@ struct cg_paint_t * cg_paint_create_linear(double x1, double y1, double x2, doub
 	return paint;
 }
 
-struct cg_paint_t * cg_paint_create_radial(double cx, double cy, double cr, double fx, double fy, double fr)
+struct cg_paint_t * cg_paint_create_radial(cg_float_t cx, cg_float_t cy, cg_float_t cr, cg_float_t fx, cg_float_t fy, cg_float_t fr)
 {
 	struct cg_gradient_t * gradient = cg_gradient_create_radial(cx, cy, cr, fx, fy, fr);
 	struct cg_paint_t * paint = cg_paint_create_gradient(gradient);
@@ -1382,12 +1382,12 @@ struct cg_gradient_data_t {
 	uint32_t colortable[1024];
 	union {
 		struct {
-			double x1, y1;
-			double x2, y2;
+			cg_float_t x1, y1;
+			cg_float_t x2, y2;
 		} linear;
 		struct {
-			double cx, cy, cr;
-			double fx, fy, fr;
+			cg_float_t cx, cy, cr;
+			cg_float_t fx, fy, fr;
 		} radial;
 	};
 };
@@ -1402,23 +1402,23 @@ struct cg_texture_data_t {
 };
 
 struct cg_linear_gradient_values_t {
-	double dx;
-	double dy;
-	double l;
-	double off;
+	cg_float_t dx;
+	cg_float_t dy;
+	cg_float_t l;
+	cg_float_t off;
 };
 
 struct cg_radial_gradient_values_t {
-	double dx;
-	double dy;
-	double dr;
-	double sqrfr;
-	double a;
-	double inv2a;
+	cg_float_t dx;
+	cg_float_t dy;
+	cg_float_t dr;
+	cg_float_t sqrfr;
+	cg_float_t a;
+	cg_float_t inv2a;
 	int extended;
 };
 
-static inline uint32_t premultiply_color(struct cg_color_t * color, double opacity)
+static inline uint32_t premultiply_color(struct cg_color_t * color, cg_float_t opacity)
 {
 	uint32_t alpha = (uint8_t)(color->a * opacity * 255);
 	uint32_t pr = (uint8_t)(color->r * alpha);
@@ -1427,7 +1427,7 @@ static inline uint32_t premultiply_color(struct cg_color_t * color, double opaci
 	return (alpha << 24) | (pr << 16) | (pg << 8) | (pb);
 }
 
-static inline uint32_t combine_opacity(struct cg_color_t * color, double opacity)
+static inline uint32_t combine_opacity(struct cg_color_t * color, cg_float_t opacity)
 {
 	uint32_t a = (uint8_t)(color->a * opacity * 255);
 	uint32_t r = (uint8_t)(color->r * 255);
@@ -1501,7 +1501,7 @@ static inline uint32_t gradient_pixel_fixed(struct cg_gradient_data_t * gradient
 	return gradient->colortable[gradient_clamp(gradient, ipos)];
 }
 
-static inline uint32_t gradient_pixel(struct cg_gradient_data_t * gradient, double pos)
+static inline uint32_t gradient_pixel(struct cg_gradient_data_t * gradient, cg_float_t pos)
 {
 	int ipos = (int)(pos * (1024 - 1) + 0.5);
 	return gradient->colortable[gradient_clamp(gradient, ipos)];
@@ -1509,8 +1509,8 @@ static inline uint32_t gradient_pixel(struct cg_gradient_data_t * gradient, doub
 
 static inline void fetch_linear_gradient(uint32_t * buffer, struct cg_linear_gradient_values_t * v, struct cg_gradient_data_t * gradient, int y, int x, int length)
 {
-	double t, inc;
-	double rx = 0, ry = 0;
+	cg_float_t t, inc;
+	cg_float_t rx = 0, ry = 0;
 
 	if(v->l == 0.0)
 	{
@@ -1532,7 +1532,7 @@ static inline void fetch_linear_gradient(uint32_t * buffer, struct cg_linear_gra
 	}
 	else
 	{
-		if(t + inc * length < (double)(INT_MAX >> (FIXPT_BITS + 1)) && t + inc * length > (double)(INT_MIN >> (FIXPT_BITS + 1)))
+		if(t + inc * length < (cg_float_t)(INT_MAX >> (FIXPT_BITS + 1)) && t + inc * length > (cg_float_t)(INT_MIN >> (FIXPT_BITS + 1)))
 		{
 			int t_fixed = (int)(t * FIXPT_SIZE);
 			int inc_fixed = (int)(inc * FIXPT_SIZE);
@@ -1563,36 +1563,36 @@ static inline void fetch_radial_gradient(uint32_t * buffer, struct cg_radial_gra
 		return;
 	}
 
-	double rx = gradient->matrix.c * (y + 0.5) + gradient->matrix.tx + gradient->matrix.a * (x + 0.5);
-	double ry = gradient->matrix.d * (y + 0.5) + gradient->matrix.ty + gradient->matrix.b * (x + 0.5);
+	cg_float_t rx = gradient->matrix.c * (y + 0.5) + gradient->matrix.tx + gradient->matrix.a * (x + 0.5);
+	cg_float_t ry = gradient->matrix.d * (y + 0.5) + gradient->matrix.ty + gradient->matrix.b * (x + 0.5);
 	rx -= gradient->radial.fx;
 	ry -= gradient->radial.fy;
 
-	double inv_a = 1.0 / (2.0 * v->a);
-	double delta_rx = gradient->matrix.a;
-	double delta_ry = gradient->matrix.b;
+	cg_float_t inv_a = 1.0 / (2.0 * v->a);
+	cg_float_t delta_rx = gradient->matrix.a;
+	cg_float_t delta_ry = gradient->matrix.b;
 
-	double b = 2 * (v->dr * gradient->radial.fr + rx * v->dx + ry * v->dy);
-	double delta_b = 2 * (delta_rx * v->dx + delta_ry * v->dy);
-	double b_delta_b = 2 * b * delta_b;
-	double delta_b_delta_b = 2 * delta_b * delta_b;
+	cg_float_t b = 2 * (v->dr * gradient->radial.fr + rx * v->dx + ry * v->dy);
+	cg_float_t delta_b = 2 * (delta_rx * v->dx + delta_ry * v->dy);
+	cg_float_t b_delta_b = 2 * b * delta_b;
+	cg_float_t delta_b_delta_b = 2 * delta_b * delta_b;
 
-	double bb = b * b;
-	double delta_bb = delta_b * delta_b;
+	cg_float_t bb = b * b;
+	cg_float_t delta_bb = delta_b * delta_b;
 
 	b *= inv_a;
 	delta_b *= inv_a;
 
-	double rxrxryry = rx * rx + ry * ry;
-	double delta_rxrxryry = delta_rx * delta_rx + delta_ry * delta_ry;
-	double rx_plus_ry = 2 * (rx * delta_rx + ry * delta_ry);
-	double delta_rx_plus_ry = 2 * delta_rxrxryry;
+	cg_float_t rxrxryry = rx * rx + ry * ry;
+	cg_float_t delta_rxrxryry = delta_rx * delta_rx + delta_ry * delta_ry;
+	cg_float_t rx_plus_ry = 2 * (rx * delta_rx + ry * delta_ry);
+	cg_float_t delta_rx_plus_ry = 2 * delta_rxrxryry;
 
 	inv_a *= inv_a;
 
-	double det = (bb - 4 * v->a * (v->sqrfr - rxrxryry)) * inv_a;
-	double delta_det = (b_delta_b + delta_bb + 4 * v->a * (rx_plus_ry + delta_rxrxryry)) * inv_a;
-	double delta_delta_det = (delta_b_delta_b + 4 * v->a * delta_rx_plus_ry) * inv_a;
+	cg_float_t det = (bb - 4 * v->a * (v->sqrfr - rxrxryry)) * inv_a;
+	cg_float_t delta_det = (b_delta_b + delta_bb + 4 * v->a * (rx_plus_ry + delta_rxrxryry)) * inv_a;
+	cg_float_t delta_delta_det = (delta_b_delta_b + 4 * v->a * delta_rx_plus_ry) * inv_a;
 
 	uint32_t * end = buffer + length;
 	if(v->extended)
@@ -1602,7 +1602,7 @@ static inline void fetch_radial_gradient(uint32_t * buffer, struct cg_radial_gra
 			uint32_t result = 0;
 			if(det >= 0)
 			{
-				double w = sqrt(det) - b;
+				cg_float_t w = sqrt(det) - b;
 				if(gradient->radial.fr + v->dr * w >= 0)
 					result = gradient_pixel(gradient, w);
 			}
@@ -1913,8 +1913,8 @@ static inline void blend_transformed_argb(struct cg_surface_t * surface, enum cg
 	while(count--)
 	{
 		uint32_t * target = (uint32_t *)(surface->pixels + spans->y * surface->stride) + spans->x;
-		double cx = spans->x + 0.5;
-		double cy = spans->y + 0.5;
+		cg_float_t cx = spans->x + 0.5;
+		cg_float_t cy = spans->y + 0.5;
 		int x = (int)((texture->matrix.c * cy + texture->matrix.a * cx + texture->matrix.tx) * FIXED_SCALE);
 		int y = (int)((texture->matrix.d * cy + texture->matrix.b * cx + texture->matrix.ty) * FIXED_SCALE);
 		int length = spans->len;
@@ -2006,8 +2006,8 @@ static inline void blend_transformed_tiled_argb(struct cg_surface_t * surface, e
 	{
 		uint32_t * target = (uint32_t *)(surface->pixels + spans->y * surface->stride) + spans->x;
 		uint32_t * image_bits = (uint32_t *)texture->pixels;
-		double cx = spans->x + 0.5;
-		double cy = spans->y + 0.5;
+		cg_float_t cx = spans->x + 0.5;
+		cg_float_t cy = spans->y + 0.5;
 		int x = (int)((texture->matrix.c * cy + texture->matrix.a * cx + texture->matrix.tx) * FIXED_SCALE);
 		int y = (int)((texture->matrix.d * cy + texture->matrix.b * cx + texture->matrix.ty) * FIXED_SCALE);
 		int coverage = (spans->coverage * texture->alpha) >> 8;
@@ -2070,8 +2070,8 @@ static inline void cg_blend_gradient(struct cg_ctx_t * ctx, struct cg_rle_t * rl
 		struct cg_gradient_stop_t *curr, *next, *start, *last;
 		uint32_t curr_color, next_color, last_color;
 		uint32_t dist, idist;
-		double delta, t, incr, fpos;
-		double opacity = state->opacity * gradient->opacity;
+		cg_float_t delta, t, incr, fpos;
+		cg_float_t opacity = state->opacity * gradient->opacity;
 
 		start = gradient->stops.data;
 		curr = start;
@@ -2279,19 +2279,19 @@ void cg_restore(struct cg_ctx_t * ctx)
 	cg_state_destroy(state);
 }
 
-void cg_set_source_rgb(struct cg_ctx_t * ctx, double r, double g, double b)
+void cg_set_source_rgb(struct cg_ctx_t * ctx, cg_float_t r, cg_float_t g, cg_float_t b)
 {
 	cg_set_source_rgba(ctx, r, g, b, 1.0);
 }
 
-void cg_set_source_rgba(struct cg_ctx_t * ctx, double r, double g, double b, double a)
+void cg_set_source_rgba(struct cg_ctx_t * ctx, cg_float_t r, cg_float_t g, cg_float_t b, cg_float_t a)
 {
 	struct cg_paint_t * source = cg_paint_create_rgba(r, g, b, a);
 	cg_set_source(ctx, source);
 	cg_paint_destroy(source);
 }
 
-void cg_set_source_surface(struct cg_ctx_t * ctx, struct cg_surface_t * surface, double x, double y)
+void cg_set_source_surface(struct cg_ctx_t * ctx, struct cg_surface_t * surface, cg_float_t x, cg_float_t y)
 {
 	struct cg_paint_t * source = cg_paint_create_for_surface(surface);
 	struct cg_texture_t * texture = cg_paint_get_texture(source);
@@ -2333,7 +2333,7 @@ void cg_set_operator(struct cg_ctx_t * ctx, enum cg_operator_t op)
 	ctx->state->op = op;
 }
 
-void cg_set_opacity(struct cg_ctx_t * ctx, double opacity)
+void cg_set_opacity(struct cg_ctx_t * ctx, cg_float_t opacity)
 {
 	ctx->state->opacity = CG_CLAMP(opacity, 0.0, 1.0);
 }
@@ -2343,7 +2343,7 @@ void cg_set_fill_rule(struct cg_ctx_t * ctx, enum cg_fill_rule_t winding)
 	ctx->state->winding = winding;
 }
 
-void cg_set_line_width(struct cg_ctx_t * ctx, double width)
+void cg_set_line_width(struct cg_ctx_t * ctx, cg_float_t width)
 {
 	ctx->state->stroke.width = width;
 }
@@ -2358,28 +2358,28 @@ void cg_set_line_join(struct cg_ctx_t * ctx, enum cg_line_join_t join)
 	ctx->state->stroke.join = join;
 }
 
-void cg_set_miter_limit(struct cg_ctx_t * ctx, double limit)
+void cg_set_miter_limit(struct cg_ctx_t * ctx, cg_float_t limit)
 {
 	ctx->state->stroke.miterlimit = limit;
 }
 
-void cg_set_dash(struct cg_ctx_t * ctx, double * dashes, int ndash, double offset)
+void cg_set_dash(struct cg_ctx_t * ctx, cg_float_t * dashes, int ndash, cg_float_t offset)
 {
 	cg_dash_destroy(ctx->state->stroke.dash);
 	ctx->state->stroke.dash = cg_dash_create(dashes, ndash, offset);
 }
 
-void cg_translate(struct cg_ctx_t * ctx, double tx, double ty)
+void cg_translate(struct cg_ctx_t * ctx, cg_float_t tx, cg_float_t ty)
 {
 	cg_matrix_translate(&ctx->state->matrix, tx, ty);
 }
 
-void cg_scale(struct cg_ctx_t * ctx, double sx, double sy)
+void cg_scale(struct cg_ctx_t * ctx, cg_float_t sx, cg_float_t sy)
 {
 	cg_matrix_scale(&ctx->state->matrix, sx, sy);
 }
 
-void cg_rotate(struct cg_ctx_t * ctx, double r)
+void cg_rotate(struct cg_ctx_t * ctx, cg_float_t r)
 {
 	cg_matrix_rotate(&ctx->state->matrix, r);
 }
@@ -2399,72 +2399,72 @@ void cg_identity_matrix(struct cg_ctx_t * ctx)
 	cg_matrix_init_identity(&ctx->state->matrix);
 }
 
-void cg_move_to(struct cg_ctx_t * ctx, double x, double y)
+void cg_move_to(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y)
 {
 	cg_path_move_to(ctx->path, x, y);
 }
 
-void cg_line_to(struct cg_ctx_t * ctx, double x, double y)
+void cg_line_to(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y)
 {
 	cg_path_line_to(ctx->path, x, y);
 }
 
-void cg_quad_to(struct cg_ctx_t * ctx, double x1, double y1, double x2, double y2)
+void cg_quad_to(struct cg_ctx_t * ctx, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2)
 {
 	cg_path_quad_to(ctx->path, x1, y1, x2, y2);
 }
 
-void cg_curve_to(struct cg_ctx_t * ctx, double x1, double y1, double x2, double y2, double x3, double y3)
+void cg_curve_to(struct cg_ctx_t * ctx, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2, cg_float_t x3, cg_float_t y3)
 {
 	cg_path_curve_to(ctx->path, x1, y1, x2, y2, x3, y3);
 }
 
-void cg_rel_move_to(struct cg_ctx_t * ctx, double x, double y)
+void cg_rel_move_to(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y)
 {
 	cg_path_rel_move_to(ctx->path, x, y);
 }
 
-void cg_rel_line_to(struct cg_ctx_t * ctx, double x, double y)
+void cg_rel_line_to(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y)
 {
 	cg_path_rel_line_to(ctx->path, x, y);
 }
 
-void cg_rel_curve_to(struct cg_ctx_t * ctx, double x1, double y1, double x2, double y2, double x3, double y3)
+void cg_rel_curve_to(struct cg_ctx_t * ctx, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2, cg_float_t x3, cg_float_t y3)
 {
 	cg_path_rel_curve_to(ctx->path, x1, y1, x2, y2, x3, y3);
 }
 
-void cg_rel_quad_to(struct cg_ctx_t * ctx, double x1, double y1, double x2, double y2)
+void cg_rel_quad_to(struct cg_ctx_t * ctx, cg_float_t x1, cg_float_t y1, cg_float_t x2, cg_float_t y2)
 {
 	cg_path_rel_quad_to(ctx->path, x1, y1, x2, y2);
 }
 
-void cg_rectangle(struct cg_ctx_t * ctx, double x, double y, double w, double h)
+void cg_rectangle(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y, cg_float_t w, cg_float_t h)
 {
 	cg_path_add_rectangle(ctx->path, x, y, w, h);
 }
 
-void cg_round_rectangle(struct cg_ctx_t * ctx, double x, double y, double w, double h, double rx, double ry)
+void cg_round_rectangle(struct cg_ctx_t * ctx, cg_float_t x, cg_float_t y, cg_float_t w, cg_float_t h, cg_float_t rx, cg_float_t ry)
 {
 	cg_path_add_round_rectangle(ctx->path, x, y, w, h, rx, ry);
 }
 
-void cg_ellipse(struct cg_ctx_t * ctx, double cx, double cy, double rx, double ry)
+void cg_ellipse(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t rx, cg_float_t ry)
 {
 	cg_path_add_ellipse(ctx->path, cx, cy, rx, ry);
 }
 
-void cg_circle(struct cg_ctx_t * ctx, double cx, double cy, double r)
+void cg_circle(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t r)
 {
 	cg_path_add_ellipse(ctx->path, cx, cy, r, r);
 }
 
-void cg_arc(struct cg_ctx_t * ctx, double cx, double cy, double r, double a0, double a1)
+void cg_arc(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t r, cg_float_t a0, cg_float_t a1)
 {
 	cg_path_add_arc(ctx->path, cx, cy, r, a0, a1, 0);
 }
 
-void cg_arc_negative(struct cg_ctx_t * ctx, double cx, double cy, double r, double a0, double a1)
+void cg_arc_negative(struct cg_ctx_t * ctx, cg_float_t cx, cg_float_t cy, cg_float_t r, cg_float_t a0, cg_float_t a1)
 {
 	cg_path_add_arc(ctx->path, cx, cy, r, a0, a1, 1);
 }

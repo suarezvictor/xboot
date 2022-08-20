@@ -28,6 +28,9 @@
 
 #include <xboot.h>
 #include <init.h>
+
+#define printf machine_logger
+
 /*
 static void graphics_test(struct framebuffer_t * fb, struct surface_t *s)
 {
@@ -57,17 +60,89 @@ static void graphics_test(struct framebuffer_t * fb, struct surface_t *s)
 	}
 }
 */
+void render_test(uint32_t *pixels, unsigned w, unsigned h, unsigned stride);
+void render_test2(uint32_t *pixels, unsigned w, unsigned h, unsigned stride);
+#ifndef __SANDBOX__		
+struct fb_f133_rgb_pdata_t
+{
+	virtual_addr_t virt_de;
+	virtual_addr_t virt_tconlcd;
+
+	char * clk_de;
+	char * clk_tconlcd;
+	int rst_de;
+	int rst_tconlcd;
+	int width;
+	int height;
+	int pwidth;
+	int pheight;
+	int bits_per_pixel;
+	int bytes_per_pixel;
+	int pixlen;
+	int index;
+	void * vram[3];
+	struct region_list_t * nrl, * orl;
+
+	struct {
+		int pixel_clock_hz;
+		int h_front_porch;
+		int h_back_porch;
+		int h_sync_len;
+		int v_front_porch;
+		int v_back_porch;
+		int v_sync_len;
+		int h_sync_active;
+		int v_sync_active;
+		int den_active;
+		int clk_active;
+	} timing;
+
+	struct led_t * backlight;
+	int brightness;
+};
+#include <dma/dmapool.h>
+
+void f133_de_set_address(struct fb_f133_rgb_pdata_t * pdat, void * vram);
+#endif
 
 static void graphics_test2(struct framebuffer_t * fb, struct surface_t *s)
 {
-	for(;;)
+#ifndef __SANDBOX__		
+	struct fb_f133_rgb_pdata_t * pdat = (struct fb_f133_rgb_pdata_t *)fb->priv;
+	printf("vram 0x%p, 0x%p\r\n", pdat->vram[0], pdat->vram[1]);
+	const void *background = s->pixels; //background image
+#endif
+
+	printf("start\r\n");
+	for(int frame=0; frame<600; ++frame)
 	{
-		void render_test(uint32_t *pixels, unsigned w, unsigned h, unsigned stride);
+#ifndef __SANDBOX__		
+		s->pixels = pdat->vram[pdat->index];
+		//memcpy(s->pixels, background, s->stride*s->height);
+		memset(s->pixels, 0, s->stride*s->height);
+#endif	
 		//render_test(s->pixels, s->width, s->height, s->stride);
-		void render_test2(uint32_t *pixels, unsigned w, unsigned h, unsigned stride);
 		render_test2(s->pixels, s->width, s->height, s->stride);
+#ifdef __SANDBOX__		
 		framebuffer_present_surface(fb, s, NULL);
+#else
+		dma_cache_sync(pdat->vram[pdat->index], pdat->pixlen, DMA_TO_DEVICE);
+
+		f133_de_set_address(pdat, s->pixels); //double buffer doesn't need DMA
+		//f133_de_enable(pdat); //FIXME: here it should wait for vsync
+		pdat->index = pdat->index+1;
+		if(pdat->index >= sizeof(pdat->vram)/sizeof(pdat->vram[0])) pdat->index=0;
+#endif
 	}
+	printf("end\r\n");
+
+extern struct profiler_t prof[];
+extern unsigned prof_count;
+	extern const char *nk_cmd_names[];
+	for(int i=0; i < prof_count; ++i)
+		printf("profiler %d %s, elapsed:\t%llu ms, count:\t%llu\r\n", i, nk_cmd_names[i], prof[i].elapsed/1000000, prof[i].count);
+
+	for(;;);
 }
 
 
