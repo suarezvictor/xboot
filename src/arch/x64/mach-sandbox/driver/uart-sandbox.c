@@ -155,6 +155,14 @@ static void uart_sandbox_suspend(struct device_t * dev)
 static void uart_sandbox_resume(struct device_t * dev)
 {
 }
+#ifdef __SANDBOX__
+int uart_available(struct uart_t * uart)
+{
+	struct uart_sandbox_pdata_t * pdat = (struct uart_sandbox_pdata_t *)uart->priv;
+	int fd_available(int fd);
+	return fd_available(pdat->fd);
+}
+#endif
 
 static struct driver_t uart_sandbox = {
 	.name		= "uart-sandbox",
@@ -176,3 +184,5 @@ static __exit void uart_sandbox_driver_exit(void)
 
 driver_initcall(uart_sandbox_driver_init);
 driver_exitcall(uart_sandbox_driver_exit);
+
+

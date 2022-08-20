@@ -12,7 +12,7 @@ PLATFORM		?=
 # Configurable advanced custom components
 #
 CFG_FRAMEWORK	?= y
-CFG_CAIRO		?= y
+CFG_CAIRO		?= n
 CFG_WBOXTEST 	?= y
 
 #

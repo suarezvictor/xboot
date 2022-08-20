@@ -516,7 +516,7 @@ static void do_stretch_blit(int x, int y, int w, int h, struct surface_t *img, i
 	struct matrix_t m;
 	matrix_init_identity(&m);
 #ifdef __SANDBOX__
-	if(w == img->width && h == img->height))
+	if(w == img->width && h == img->height)
 #endif
 	{
 		const uint32_t *s = img->pixels;
@@ -1074,6 +1074,10 @@ void * priv;
 	return nk_image_ptr(img);
 }
 
+#include <framebuffer/framebuffer.h>
+#warning FIX THIS, should match original definition
+struct render_cg_ctx_t { struct cg_surface_t * cs; struct cg_ctx_t * cg; }; //FIXME: //BUG: should match renderer
+
 void nuklear_demo(void)
 {
 	printf("render_test2, renderer %s\r\n", current_surface->r->name);
@@ -1122,11 +1126,45 @@ void nuklear_demo(void)
 		media.menu[5] = image_load("nuklear/icon/volume.png");
 	}
 
-	grid_demo(&nkctx, &media);
-	button_demo(&nkctx, &media);
-	basic_demo(&nkctx, &media);
+
+
+#undef printf
+#define printf machine_logger
+
+	printf("render commands profiling\r\n");
+	for(int i = 0; i < 600; ++i)
+	{	
+		grid_demo(&nkctx, &media);
+		button_demo(&nkctx, &media);
+		basic_demo(&nkctx, &media);
+
+		struct nk_context bak = nkctx;
+		commands_render();
+		nkctx = bak;
+		{
+			static int y = 0;
+			cg_rectangle(cgctx, 10, y, 35, 20);
+			cg_fill(cgctx);
+
+			if(++y>=WINDOW_HEIGHT) y=0;
+			do_text(10, y, "Hello", 5);
+		}
+		
+		extern struct framebuffer_t * current_fb;
+#ifdef __SANDBOX__		
+		framebuffer_present_surface(current_fb, current_surface, NULL);
+#else
+		current_surface->pixels = framebuffer_flip(current_fb);
+		memset(current_surface->pixels, 0, current_surface->stride*current_surface->height); //FIXME: call clear method
+		((struct render_cg_ctx_t *)current_surface->rctx)->cs->pixels=current_surface->pixels;
+#endif
+		
+	}
+
+	for(int i=0; i < prof_count; ++i)
+		printf("profiler %d %s, elapsed:\t%llu ms, count:\t%llu\r\n", i, nk_cmd_names[i], prof[i].elapsed/1000000, prof[i].count);
 	
-	commands_render();
+	for(;;);
 }
 
 #include <graphic/text.h>
@@ -1143,7 +1181,6 @@ static void do_text(int x, int y, const char *utf8, unsigned count)
 
 void render_test2(uint32_t *pixels, unsigned w, unsigned h, unsigned stride)
 {
-	struct render_cg_ctx_t { struct cg_surface_t * cs; struct cg_ctx_t * cg; }; //FIXME: should match renderer
 	if(cgctx == NULL)
 	{
 		cgctx = ((struct render_cg_ctx_t *)current_surface->rctx)->cg;
@@ -1155,12 +1192,4 @@ void render_test2(uint32_t *pixels, unsigned w, unsigned h, unsigned stride)
 	((struct render_cg_ctx_t *)current_surface->rctx)->cs->pixels=pixels;
 		
 	nuklear_demo();
-	{
-		static int y = 0;
-		cg_rectangle(cgctx, 10, y, 35, 20);
-		cg_fill(cgctx);
-
-		if(++y>=WINDOW_HEIGHT) y=0;
-		do_text(10, y, "Hello", 5);
-	}
 }

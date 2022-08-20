@@ -320,6 +320,21 @@ static void fb_present(struct framebuffer_t * fb, struct surface_t * s, struct r
 	f133_de_enable(pdat);
 }
 
+//this should wait for vsync
+void *framebuffer_flip(struct framebuffer_t * fb)
+{
+	struct fb_f133_rgb_pdata_t * pdat = (struct fb_f133_rgb_pdata_t *)fb->priv;
+	dma_cache_sync(pdat->vram[pdat->index], pdat->pixlen, DMA_TO_DEVICE);
+	f133_de_set_address(pdat,  pdat->vram[pdat->index]);
+	f133_de_enable(pdat);
+	
+	pdat->index = pdat->index+1;
+	if(pdat->index >= sizeof(pdat->vram)/sizeof(pdat->vram[0]))
+		pdat->index=0;
+	return pdat->vram[pdat->index];
+}
+
+
 static struct device_t * fb_f133_rgb_probe(struct driver_t * drv, struct dtnode_t * n)
 {
 	struct fb_f133_rgb_pdata_t * pdat;
