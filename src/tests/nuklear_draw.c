@@ -473,29 +473,82 @@ static struct cg_ctx_t * cgctx = NULL;
 struct surface_t;
 extern struct surface_t *current_surface;
 
-static void do_stretch_blit(int x, int y, int w, int h, struct surface_t *img)
+static inline void blend(uint32_t * d, uint32_t * s)
+{
+	uint32_t dv, sv = *s;
+	uint8_t da, dr, dg, db;
+	uint8_t sa, sr, sg, sb;
+	uint8_t a, r, g, b;
+	int t;
+
+	sa = (sv >> 24) & 0xff;
+	if(sa == 255)
+	{
+		*d = sv;
+	}
+	else if(sa != 0)
+	{
+		sr = (sv >> 16) & 0xff;
+		sg = (sv >> 8) & 0xff;
+		sb = (sv >> 0) & 0xff;
+		dv = *d;
+		da = (dv >> 24) & 0xff;
+		dr = (dv >> 16) & 0xff;
+		dg = (dv >> 8) & 0xff;
+		db = (dv >> 0) & 0xff;
+		t = sa + (sa >> 8);
+		a = (((sa + da) << 8) - da * t) >> 8;
+		r = (((sr + dr) << 8) - dr * t) >> 8;
+		g = (((sg + dg) << 8) - dg * t) >> 8;
+		b = (((sb + db) << 8) - db * t) >> 8;
+		*d = (a << 24) | (r << 16) | (g << 8) | (b << 0);
+	}
+}
+
+void fast_hblend(uint32_t *d, const uint32_t *s, unsigned w)
+{
+	while(w--)
+		blend(d++, s++);
+}
+
+static void do_stretch_blit(int x, int y, int w, int h, struct surface_t *img, int alphablend)
 {
 	struct matrix_t m;
 	matrix_init_identity(&m);
-	if(w == img->width && h == img->height)
+#ifdef __SANDBOX__
+	if(w == img->width && h == img->height))
+#endif
 	{
-		render_cg.shape_set_source(current_surface, img, x, y);
-		render_cg.shape_paint(current_surface);
+		const uint32_t *s = img->pixels;
+		uint32_t *d = cgctx->surface->pixels;
+		d += x;
+		d += y*cgctx->surface->stride/sizeof(*d);
+		if(img->width < w)
+			w = img->width;
+		if(img->height < h)
+			h = img->height;
+		for(int j = 0; j < h; ++j)
+		{
+			if(alphablend)
+				fast_hblend(d, s, w);
+			else
+				memcpy(d, s, w*sizeof(*d));
+			d += cgctx->surface->stride/sizeof(*d);
+			s += img->stride/sizeof(*d);
+		}
 	}
+#ifdef __SANDBOX__
 	else
 	{
 		matrix_translate(&m, x, y);
 		matrix_scale(&m, (double)w/img->width, (double)h/img->height);
-		//struct region_t r;
-		//region_init(&r, x, y, w, h); //clip not needed since scaled
-		//surface_blit(current_surface, /*&r*/NULL, &m, img);
-		
 		render_cg.shape_save(current_surface);
 		render_cg.shape_set_matrix(current_surface, &m);
 		render_cg.shape_set_source(current_surface, img, 0, 0);
 		render_cg.shape_paint(current_surface);
 		render_cg.shape_restore(current_surface);	
 	}
+#endif
 }
 
 static void do_text(int x, int y, const char *utf8, unsigned count);
@@ -521,13 +574,12 @@ struct cg_ctx_t {
 
 //#define NO_FAST_RECT
 
-static inline void fast_hline(void *dst, int w, uint32_t c)
+static inline void fast_hline(uint32_t *d, int w, uint32_t c)
 {
-	uint32_t *d = (uint32_t*)dst;
 	uint32_t *e = d+w;
 #if 1
 	typedef uint64_t T;
-	while(d <= e && (((int) d) & 0x4) != 0)
+	while(d < e && (((int) d) & 0x4) != 0)
 		*d++ = c;
 	T *D = (T*)d;
 	T C = c; C = (C << 32) | c;
@@ -567,7 +619,7 @@ void cg_rectangle_fast(struct cg_ctx_t * ctx, int x, int y, int w, int h, int r,
 	fast_hline(d+(r>0)+h*ctx->surface->stride/sizeof(*d),w-(r?2:0), color);	
 	if(r)
 		d += ctx->surface->stride/sizeof(*d);
-	for(int j=0; j<h-(r?2:0); ++j)
+	for(int j=0; j<=h-(r?2:0); ++j)
 	{
 		d[0] = color;
 		d[w] = color;
@@ -613,14 +665,6 @@ void cg_rectangle_filled_fast(struct cg_ctx_t * ctx, int x, int y, int w, int h,
 		h = ctx->clip.y+ctx->clip.h-y;
 	d += x;
 	d += y*ctx->surface->stride/sizeof(*d);
-	/*
-	while(--h)
-	{
-		fast_hline(d, h, 0xFFFF8040);
-		d += ctx->surface->stride/sizeof(*d);
-	}
-	return;
-	*/
 	for(int j=0; j<h; ++j)
 	{
 		fast_hline(d, w, color);
@@ -942,7 +986,10 @@ struct nk_command_image {
 struct nk_image {nk_handle handle; nk_ushort w, h; nk_ushort region[4];};
         	*/
         	if(imgsurface)
-        		do_stretch_blit(i->x, i->y, i->w, i->h, imgsurface);
+        	{
+        		int alphablend = 1; //fixme: see image source type
+        		do_stretch_blit(i->x, i->y, i->w, i->h, imgsurface, alphablend);
+        	}
         } break;
         case NK_COMMAND_RECT_MULTI_COLOR:
 /*
@@ -989,7 +1036,9 @@ static void init_assets_dir(const char *path)
 	xfs_mount(&xfs_assets, path, 0);
 }
 
-//#define ASSETS_DIR "/application"
+#ifdef __SANDBOX__
+#define ASSETS_DIR "/application"
+#endif
 
 static struct nk_image image_load(const char *filename)
 {
